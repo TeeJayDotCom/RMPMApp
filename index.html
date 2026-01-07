@@ -14,176 +14,233 @@
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.tailwindcss.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #334155; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; }
         
-        /* Loading Animation */
+        /* Loader */
         #loader { position: fixed; inset: 0; background: white; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; }
+        .spinner { width: 45px; height: 45px; border: 4px solid #f1f5f9; border-top: 4px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Mobile Card Styling */
-        .mobile-card { background: white; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
-        .mobile-label { font-size: 0.7rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.25rem; }
-        .mobile-val { font-size: 0.9rem; color: #334155; font-weight: 500; margin-bottom: 0.75rem; }
+        /* Card View (Mobile) */
+        .mobile-card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: transform 0.2s; }
+        .mobile-card:active { transform: scale(0.98); }
+        .mobile-label { font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 700; margin-bottom: 2px; }
+        .mobile-val { font-size: 14px; color: #334155; font-weight: 500; }
 
         /* Badges */
-        .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
-        .badge-active { background-color: #dcfce7; color: #166534; }
-        .badge-inactive { background-color: #fee2e2; color: #991b1b; }
+        .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+        .badge-active { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .badge-inactive { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
 
+        /* Transitions */
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
         /* Modal */
-        .modal { transition: opacity 0.25s ease; }
+        .modal { transition: opacity 0.2s ease-in-out; }
         body.modal-active { overflow: hidden; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="flex flex-col min-h-screen">
 
     <div id="loader">
-        <div class="spinner mb-4"></div>
-        <h2 class="text-xl font-bold text-slate-700">Loading Inventory...</h2>
-        <p class="text-sm text-slate-500 mt-2">Fetching "RM.xlsx"</p>
-        <div id="error-msg" class="hidden mt-4 text-red-500 bg-red-50 p-4 rounded-lg text-sm max-w-md text-center border border-red-200"></div>
+        <div class="spinner mb-6"></div>
+        <h2 class="text-xl font-bold text-slate-800">Loading Inventory...</h2>
+        <p class="text-sm text-slate-500 mt-2 mb-6">Fetching "RM.xlsx"</p>
+        
+        <div class="text-center">
+            <p class="text-xs text-slate-400 mb-2">Taking too long?</p>
+            <label class="cursor-pointer bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors text-sm inline-flex items-center gap-2">
+                <i class="fa-solid fa-upload"></i> Upload File Manually
+                <input type="file" id="manualFileInput" class="hidden" accept=".xlsx, .xls, .csv">
+            </label>
+        </div>
+        <div id="error-msg" class="hidden mt-4 text-red-500 text-sm font-medium"></div>
     </div>
 
-    <nav class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center gap-3">
-                    <div class="bg-blue-600 text-white p-2 rounded-lg">
-                        <i class="fa-solid fa-boxes-stacked"></i>
-                    </div>
-                    <div>
-                        <h1 class="font-bold text-lg md:text-xl text-slate-800">Inventory App</h1>
-                    </div>
-                </div>
-                <div class="flex items-center">
-                    <button onclick="location.reload()" class="text-sm text-blue-600 font-medium hover:text-blue-800 flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg">
-                        <i class="fa-solid fa-rotate-right"></i> Refresh
-                    </button>
-                </div>
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-40 px-4 md:px-8 h-16 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="bg-blue-600 text-white w-8 h-8 rounded-lg flex items-center justify-center">
+                <i class="fa-solid fa-box"></i>
             </div>
+            <span class="font-bold text-lg text-slate-800 tracking-tight">Inventory</span>
+        </div>
+        <div class="flex gap-2">
+            <div class="hidden md:flex bg-slate-100 p-1 rounded-lg mr-2">
+                <button onclick="switchView('table')" id="btn-table" class="px-3 py-1.5 rounded-md text-sm font-medium bg-white text-blue-600 shadow-sm"><i class="fa-solid fa-table"></i></button>
+                <button onclick="switchView('grid')" id="btn-grid" class="px-3 py-1.5 rounded-md text-sm font-medium text-slate-500 hover:text-slate-700"><i class="fa-solid fa-grip"></i></button>
+            </div>
+            <button onclick="location.reload()" class="p-2 text-slate-400 hover:text-blue-600 transition-colors"><i class="fa-solid fa-rotate-right"></i></button>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 flex-grow">
+    <main class="flex-grow p-4 md:p-8 max-w-7xl mx-auto w-full">
         
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                <p class="text-xs font-bold text-slate-400 uppercase">Total Items</p>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-[10px] md:text-xs font-bold text-slate-400 uppercase">Total Items</p>
                 <p class="text-2xl md:text-3xl font-bold text-slate-800 mt-1" id="kpi-total">-</p>
             </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 border-l-4 border-green-500">
-                <p class="text-xs font-bold text-green-600 uppercase">Active</p>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-green-500">
+                <p class="text-[10px] md:text-xs font-bold text-green-600 uppercase">Active</p>
                 <p class="text-2xl md:text-3xl font-bold text-slate-800 mt-1" id="kpi-active">-</p>
             </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 border-l-4 border-red-500">
-                <p class="text-xs font-bold text-red-600 uppercase">Discontinued</p>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-red-500">
+                <p class="text-[10px] md:text-xs font-bold text-red-600 uppercase">Discontinued</p>
                 <p class="text-2xl md:text-3xl font-bold text-slate-800 mt-1" id="kpi-inactive">-</p>
             </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                <p class="text-xs font-bold text-blue-500 uppercase">Vendors</p>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-[10px] md:text-xs font-bold text-blue-500 uppercase">Vendors</p>
                 <p class="text-2xl md:text-3xl font-bold text-slate-800 mt-1" id="kpi-vendors">-</p>
             </div>
         </div>
 
-        <div class="hidden md:grid grid-cols-3 gap-6 mb-8">
-            <div class="col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                <h3 class="text-base font-bold text-slate-700 mb-4">Items by Category</h3>
-                <div class="relative h-64 w-full"><canvas id="categoryChart"></canvas></div>
-            </div>
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                <h3 class="text-base font-bold text-slate-700 mb-4">Status</h3>
-                <div class="relative h-64 w-full flex justify-center"><canvas id="statusChart"></canvas></div>
+        <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm mb-6 sticky top-20 md:static z-30">
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400"></i>
+                <input type="text" id="globalSearch" placeholder="Search items, codes, vendors..." class="w-full pl-10 pr-4 py-3 rounded-lg text-sm focus:outline-none focus:bg-slate-50 transition-colors">
             </div>
         </div>
 
-        <div class="hidden md:block bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-            <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                <h3 class="font-bold text-slate-700">Detailed Inventory</h3>
-            </div>
-            <div class="p-5">
-                <table id="dataTable" class="w-full text-left border-collapse stripe hover">
-                    <thead>
-                        <tr>
-                            <th>Status</th>
-                            <th>Category</th>
-                            <th>Item Name</th>
-                            <th>Item Code</th>
-                            <th>Vendor</th>
-                            <th class="text-right">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody"></tbody>
-                </table>
-            </div>
+        <div id="tableView" class="hidden md:block bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <table id="mainTable" class="w-full text-left border-collapse">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                        <th class="pl-6 py-4 text-xs font-bold text-slate-500 uppercase">Status</th>
+                        <th class="py-4 text-xs font-bold text-slate-500 uppercase">Code</th>
+                        <th class="py-4 text-xs font-bold text-slate-500 uppercase">Item Name</th>
+                        <th class="py-4 text-xs font-bold text-slate-500 uppercase">Category</th>
+                        <th class="py-4 text-xs font-bold text-slate-500 uppercase">Vendor</th>
+                        <th class="pr-6 py-4 text-right text-xs font-bold text-slate-500 uppercase">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody" class="text-sm text-slate-600"></tbody>
+            </table>
         </div>
 
-        <div class="md:hidden" id="mobileContainer">
-            </div>
+        <div id="mobileView" class="md:hidden">
+            <div id="mobileContainer"></div>
+        </div>
+
+        <div id="noResults" class="hidden text-center py-12 text-slate-400">
+            <i class="fa-solid fa-box-open text-4xl mb-3"></i>
+            <p>No items found.</p>
+        </div>
 
     </main>
 
     <div id="detailModal" class="modal opacity-0 pointer-events-none fixed inset-0 z-50 flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal()"></div>
-        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl relative flex flex-col max-h-[85vh]">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl relative flex flex-col max-h-[85vh] z-10">
             <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
-                <h3 class="font-bold text-lg text-slate-800">Item Details</h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-xmark fa-xl"></i></button>
+                <div>
+                    <h3 class="font-bold text-lg text-slate-800" id="modalTitle">Item Details</h3>
+                    <p class="text-xs text-slate-500" id="modalSubtitle">-</p>
+                </div>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-white text-slate-400 hover:text-red-500 flex items-center justify-center shadow-sm transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
+            
             <div class="p-0 overflow-y-auto bg-white flex-grow">
                 <table class="w-full text-sm text-left">
                     <tbody id="modalContent" class="divide-y divide-slate-100">
                         </tbody>
                 </table>
             </div>
+
             <div class="p-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl">
-                <button onclick="closeModal()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-3 rounded-xl">Close</button>
+                <button onclick="closeModal()" class="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold py-3 rounded-xl shadow-sm transition-colors">
+                    Close Details
+                </button>
             </div>
         </div>
     </div>
 
     <script>
         const FILENAME = 'RM.xlsx'; 
-        let globalData = []; // Store data globally for modal access
+        let globalData = [];
+        let dataTableInst = null;
 
         $(document).ready(function() {
+            // Mobile View Check
+            if($(window).width() < 768) {
+                $('#tableView').hide();
+                $('#mobileView').show();
+            }
+
+            // Start Fetch
             fetchData();
+
+            // Search Logic
+            $('#globalSearch').on('keyup', function() {
+                const val = this.value.toLowerCase();
+                
+                // Filter Table
+                if(dataTableInst) dataTableInst.search(val).draw();
+                
+                // Filter Mobile Cards
+                let visibleCount = 0;
+                $('.mobile-item').each(function() {
+                    const text = $(this).data('search');
+                    if(String(text).includes(val)) {
+                        $(this).show(); visibleCount++;
+                    } else {
+                        $(this).hide();
+                    }
+                });
+
+                if(visibleCount === 0 && $(window).width() < 768) $('#noResults').removeClass('hidden');
+                else $('#noResults').addClass('hidden');
+            });
+
+            // Manual Upload Listener
+            $('#manualFileInput').on('change', function(e) {
+                if(e.target.files[0]) processFile(e.target.files[0]);
+            });
         });
 
         async function fetchData() {
             try {
-                // Fetch with cache-busting
+                // Fetch without timeout - let network decide
                 const response = await fetch(FILENAME + '?v=' + new Date().getTime());
                 
                 if (!response.ok) {
-                    throw new Error(`Could not find "${FILENAME}".`);
+                    throw new Error(`Status: ${response.status}`);
                 }
 
                 const arrayBuffer = await response.arrayBuffer();
                 const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-                const firstSheetName = workbook.SheetNames[0];
-                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName]);
-
+                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                
                 processData(jsonData);
 
             } catch (error) {
-                const errDiv = document.getElementById('error-msg');
-                errDiv.innerHTML = `<strong>Error:</strong> ${error.message}<br>Check file name on GitHub.`;
-                errDiv.classList.remove('hidden');
-                document.querySelector('.spinner').style.display = 'none';
+                console.error(error);
+                $('#error-msg').text("Auto-load failed. Please use manual upload.").removeClass('hidden');
+                // Keep spinner visible but stop spinning or show warning icon if desired
+                // But Manual Upload button is already there, so user is not stuck.
             }
         }
 
+        function processFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                processData(jsonData);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
         function processData(data) {
-            globalData = data; // Save for modal
-            let active = 0, inactive = 0;
+            globalData = data;
+            let active = 0, discontinued = 0;
             let vendors = new Set();
-            let categories = {};
             
             const tableBody = $('#tableBody');
             const mobileContainer = $('#mobileContainer');
@@ -192,6 +249,7 @@
             mobileContainer.empty();
 
             data.forEach((row, index) => {
+                // Mapping
                 const status = row['Status'] || 'Unknown';
                 const category = row['Material List::Material_Detail'] || row['Category'] || 'General';
                 const name = row['Item_Name'] || row['Item Name'] || 'Item';
@@ -200,90 +258,92 @@
                 const id = row['ID'] || '';
 
                 // Stats
-                if (String(status).toLowerCase().includes('in use')) active++; else inactive++;
-                if (vendor) vendors.add(vendor);
-                if (category) categories[category] = (categories[category] || 0) + 1;
+                if(String(status).toLowerCase().includes('in use')) active++; else discontinued++;
+                if(vendor) vendors.add(vendor);
 
                 const badgeClass = String(status).toLowerCase().includes('in use') ? 'badge-active' : 'badge-inactive';
 
                 // 1. DESKTOP ROW
                 const tr = `
                     <tr>
-                        <td><span class="badge ${badgeClass}">${status}</span></td>
-                        <td class="font-medium text-slate-700">${category}</td>
-                        <td class="text-slate-600">${name}</td>
-                        <td class="font-mono text-xs text-slate-500">${code}</td>
-                        <td class="text-sm text-slate-500">${vendor}</td>
-                        <td class="text-right">
-                            <button onclick="openModal(${index})" class="text-blue-600 hover:text-blue-800 font-bold text-xs bg-blue-50 px-3 py-1 rounded">View</button>
+                        <td class="pl-6 py-4"><span class="badge ${badgeClass}">${status}</span></td>
+                        <td class="py-4 font-mono text-xs text-slate-500 font-bold">${code}</td>
+                        <td class="py-4 font-medium text-slate-700">${name}</td>
+                        <td class="py-4 text-slate-600">${category}</td>
+                        <td class="py-4 text-slate-500">${vendor}</td>
+                        <td class="pr-6 py-4 text-right">
+                            <button onclick="openModal(${index})" class="text-blue-600 hover:text-blue-800 font-bold text-xs bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">View</button>
                         </td>
                     </tr>
                 `;
                 tableBody.append(tr);
 
                 // 2. MOBILE CARD
+                const searchStr = (name + " " + code + " " + vendor + " " + category).toLowerCase();
                 const card = `
-                    <div class="mobile-card" onclick="openModal(${index})">
+                    <div class="mobile-card mobile-item cursor-pointer active:bg-slate-50" onclick="openModal(${index})" data-search="${searchStr}">
                         <div class="flex justify-between items-start mb-3">
                             <span class="badge ${badgeClass}">${status}</span>
                             <span class="text-xs font-mono text-slate-400">#${id}</span>
                         </div>
-                        <h4 class="font-bold text-slate-800 text-lg mb-1 leading-tight">${name}</h4>
-                        <p class="text-xs text-slate-500 font-mono mb-4">${code}</p>
+                        <h4 class="font-bold text-slate-800 text-lg mb-1 leading-snug">${name}</h4>
+                        <div class="text-xs font-mono text-slate-500 bg-slate-50 inline-block px-2 py-1 rounded mb-4">${code}</div>
                         
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <p class="mobile-label">Category</p>
-                                <p class="mobile-val">${category}</p>
+                                <p class="mobile-val truncate">${category}</p>
                             </div>
                             <div>
                                 <p class="mobile-label">Vendor</p>
-                                <p class="mobile-val">${vendor}</p>
+                                <p class="mobile-val truncate">${vendor}</p>
                             </div>
                         </div>
-                        <div class="mt-2 pt-3 border-t border-slate-100 text-center">
-                            <span class="text-blue-600 text-sm font-bold">Tap to see full details</span>
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-center text-blue-600 text-sm font-bold">
+                            View Full Details <i class="fa-solid fa-chevron-right ml-2 text-xs"></i>
                         </div>
                     </div>
                 `;
                 mobileContainer.append(card);
             });
 
-            // Update UI
+            // Update UI Stats
             $('#kpi-total').text(data.length);
             $('#kpi-active').text(active);
-            $('#kpi-inactive').text(inactive);
+            $('#kpi-inactive').text(discontinued);
             $('#kpi-vendors').text(vendors.size);
-            
+
             // Init Table
-            $('#dataTable').DataTable({
-                pageLength: 15,
-                responsive: true,
-                order: [[0, 'asc']], // Sort by Status
-                language: { search: "", searchPlaceholder: "Search inventory..." },
-                dom: '<"flex justify-between items-center mb-4"f>rtip'
+            if(dataTableInst) dataTableInst.destroy();
+            dataTableInst = $('#mainTable').DataTable({
+                pageLength: 20,
+                dom: 'rtip',
+                ordering: true,
+                responsive: true
             });
 
-            renderCharts(active, inactive, categories);
-            $('#loader').addClass('hidden');
+            $('#loader').fadeOut();
         }
 
-        // MODAL LOGIC
         function openModal(index) {
             const row = globalData[index];
             const tbody = $('#modalContent');
             tbody.empty();
 
+            // Header Info
+            $('#modalTitle').text(row['Item_Name'] || row['Item Name'] || 'Item Details');
+            $('#modalSubtitle').text(row['Item_Code'] || row['Item Code'] || '');
+
+            // Iterate ALL keys
             Object.keys(row).forEach(key => {
-                // Filter out empty keys if you want, or show all
                 if(row[key]) {
                     const cleanKey = key.replace(/_/g, ' ').replace(/::/g, ' - ');
                     const html = `
                         <tr class="hover:bg-slate-50">
-                            <td class="px-5 py-3 align-top w-1/3">
+                            <td class="px-5 py-3 align-top w-1/3 border-b border-slate-50">
                                 <p class="text-xs font-bold text-slate-400 uppercase tracking-wide">${cleanKey}</p>
                             </td>
-                            <td class="px-5 py-3 align-top">
+                            <td class="px-5 py-3 align-top border-b border-slate-50">
                                 <p class="text-sm font-medium text-slate-800 break-words">${row[key]}</p>
                             </td>
                         </tr>
@@ -301,33 +361,16 @@
             $('body').removeClass('modal-active');
         }
 
-        // CHARTS (Same as before)
-        function renderCharts(active, inactive, cats) {
-            // Check if on mobile (screen width < 768px) and skip charts to save space if needed
-            if(window.innerWidth < 768) return; 
-
-            new Chart(document.getElementById('statusChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['In Use', 'Discontinued'],
-                    datasets: [{ data: [active, inactive], backgroundColor: ['#22c55e', '#ef4444'], borderWidth: 0 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom' } } }
-            });
-
-            const sortedCats = Object.entries(cats).sort((a,b) => b[1] - a[1]).slice(0, 10);
-            new Chart(document.getElementById('categoryChart'), {
-                type: 'bar',
-                data: {
-                    labels: sortedCats.map(x => x[0]),
-                    datasets: [{ label: 'Count', data: sortedCats.map(x => x[1]), backgroundColor: '#3b82f6', borderRadius: 4 }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } },
-                    plugins: { legend: { display: false } }
-                }
-            });
+        function switchView(view) {
+            if(view === 'table') {
+                $('#tableView').show(); $('#mobileView').hide();
+                $('#btn-table').addClass('text-blue-600 bg-white shadow-sm').removeClass('text-slate-500');
+                $('#btn-grid').removeClass('text-blue-600 bg-white shadow-sm').addClass('text-slate-500');
+            } else {
+                $('#tableView').hide(); $('#mobileView').show();
+                $('#btn-grid').addClass('text-blue-600 bg-white shadow-sm').removeClass('text-slate-500');
+                $('#btn-table').removeClass('text-blue-600 bg-white shadow-sm').addClass('text-slate-500');
+            }
         }
 
         document.onkeydown = function(evt) { if (evt.key === "Escape") closeModal(); };
