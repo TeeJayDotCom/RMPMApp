@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RM Inventory Master</title>
+    <title>Inventory Master Pro</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -17,64 +17,132 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; color: #1f2937; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; }
         
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
         /* Loader */
-        #loader { position: fixed; inset: 0; background: white; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .spinner { width: 45px; height: 45px; border: 4px solid #f3f3f3; border-top: 4px solid #2563eb; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        #loader { position: fixed; inset: 0; background: rgba(255,255,255,0.98); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { width: 45px; height: 45px; border: 4px solid #e2e8f0; border-top: 4px solid #2563eb; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Card Styling */
-        .item-card { transition: transform 0.2s, box-shadow 0.2s; border: 1px solid #e2e8f0; }
-        .item-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); border-color: #3b82f6; }
+        /* Cards */
+        .item-card { transition: all 0.2s; border: 1px solid #e2e8f0; }
+        .item-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15); border-color: #3b82f6; }
 
-        /* Badges */
-        .pill { padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-        .pill-active { background-color: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
-        .pill-inactive { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        /* Pills */
+        .pill { padding: 3px 10px; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; }
+        .pill-active { background-color: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .pill-inactive { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
 
         /* Modal */
-        .modal-active { overflow: hidden; }
         .modal { transition: opacity 0.2s ease-in-out; }
+        .modal-active { overflow: hidden; }
+        .tab-btn.active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: 600; }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
 
     <div id="loader">
         <div class="spinner mb-4"></div>
-        <h2 class="text-xl font-bold text-slate-800">Loading App...</h2>
-        <p class="text-sm text-slate-500 mt-2">Fetching "RM.xlsx"</p>
-        <div id="error-msg" class="hidden mt-4 text-red-500 bg-red-50 p-4 rounded-lg text-sm max-w-md text-center border border-red-200"></div>
+        <h2 class="text-xl font-bold text-slate-800">Loading Inventory</h2>
+        <p class="text-sm text-slate-500 mt-2">Connecting to RM.xlsx...</p>
+        <div id="error-msg" class="hidden mt-6 text-red-600 bg-red-50 p-6 rounded-xl text-center border border-red-100 max-w-md shadow-sm">
+            <i class="fa-solid fa-triangle-exclamation text-2xl mb-2"></i>
+            <p class="font-bold">File Not Found</p>
+            <p class="text-sm mt-1">Could not auto-load <strong>RM.xlsx</strong>.</p>
+            <label class="block mt-4 cursor-pointer">
+                <input type="file" id="manualFileInput" class="hidden" accept=".xlsx, .xls, .csv">
+                <span class="bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-lg text-sm font-bold transition-colors">
+                    Upload Manually
+                </span>
+            </label>
+        </div>
     </div>
 
-    <div id="detailModal" class="modal opacity-0 pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal()"></div>
-        <div class="bg-white w-full max-w-4xl m-4 rounded-xl shadow-2xl relative flex flex-col max-h-[90vh] z-10 transform scale-95 transition-transform duration-200" id="modalPanel">
-            <div class="p-6 border-b border-slate-100 flex justify-between items-start bg-slate-50 rounded-t-xl">
+    <div id="detailModal" class="modal opacity-0 pointer-events-none fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="closeModal()"></div>
+        <div class="bg-white w-full max-w-5xl rounded-2xl shadow-2xl relative flex flex-col max-h-[90vh] z-10 transform scale-95 transition-all duration-200" id="modalPanel">
+            
+            <div class="p-6 border-b border-slate-100 flex justify-between items-start bg-slate-50 rounded-t-2xl">
                 <div>
-                    <span id="modalId" class="text-xs font-mono text-slate-400">#ID</span>
-                    <h3 id="modalTitle" class="text-xl font-bold text-slate-800 leading-tight mt-1">Item Name</h3>
-                    <div id="modalSubtitle" class="text-sm text-blue-600 font-medium mt-1">Vendor Name</div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span id="modalId" class="text-xs font-mono bg-slate-200 text-slate-600 px-2 py-0.5 rounded">ID</span>
+                        <span id="modalStatus" class="text-xs font-bold uppercase tracking-wider"></span>
+                    </div>
+                    <h3 id="modalTitle" class="text-2xl font-bold text-slate-800 leading-tight">Item Name</h3>
+                    <div id="modalSubtitle" class="text-sm text-blue-600 font-medium mt-1 flex items-center gap-1">
+                        <i class="fa-solid fa-store text-xs"></i> <span id="modalVendor">Vendor</span>
+                    </div>
                 </div>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-red-500 transition-colors p-2">
+                <button onclick="closeModal()" class="text-slate-400 hover:text-red-500 transition-colors p-2 hover:bg-red-50 rounded-lg">
                     <i class="fa-solid fa-xmark fa-xl"></i>
                 </button>
             </div>
-            <div class="p-8 overflow-y-auto bg-white custom-scrollbar">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6" id="modalContent">
-                    </div>
-                <div class="mt-8 pt-6 border-t border-slate-100">
-                    <h4 class="text-sm font-bold text-slate-900 uppercase tracking-wide mb-2"><i class="fa-regular fa-comment-dots mr-2"></i>Remarks</h4>
-                    <p id="modalRemarks" class="text-slate-700 bg-yellow-50 p-4 rounded-lg border border-yellow-100 text-sm italic leading-relaxed">No remarks.</p>
-                </div>
+
+            <div class="flex border-b border-slate-200 px-6">
+                <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn active px-4 py-3 text-sm text-slate-600 hover:text-blue-600 transition-colors">Overview</button>
+                <button onclick="switchTab('raw')" id="tab-raw" class="tab-btn px-4 py-3 text-sm text-slate-600 hover:text-blue-600 transition-colors">Full Data Sheet</button>
             </div>
-            <div class="p-4 border-t border-slate-100 bg-slate-50 rounded-b-xl flex justify-end">
-                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-2 rounded-lg font-medium transition-colors">Close</button>
+
+            <div class="p-8 overflow-y-auto bg-white custom-scrollbar flex-grow">
+                
+                <div id="view-overview">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                            <p class="text-xs font-bold text-blue-400 uppercase">Item Code</p>
+                            <p class="text-lg font-bold text-blue-900 font-mono" id="modalCode">-</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <p class="text-xs font-bold text-slate-400 uppercase">Category</p>
+                            <p class="text-lg font-bold text-slate-800" id="modalCat">-</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <p class="text-xs font-bold text-slate-400 uppercase">Product Code</p>
+                            <p class="text-lg font-bold text-slate-800 font-mono" id="modalPCode">-</p>
+                        </div>
+                    </div>
+
+                    <div class="mb-8">
+                        <h4 class="text-sm font-bold text-slate-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                            <i class="fa-regular fa-comment-dots text-amber-500"></i> Remarks
+                        </h4>
+                        <div class="bg-amber-50 border border-amber-100 rounded-xl p-5">
+                            <p id="modalRemarks" class="text-slate-700 text-sm leading-relaxed italic">No remarks available.</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-900 uppercase tracking-wide mb-3">Specifications</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4" id="modalCommonFields">
+                            </div>
+                    </div>
+                </div>
+
+                <div id="view-raw" class="hidden">
+                    <p class="text-xs text-slate-400 mb-4 bg-slate-50 p-2 rounded border border-slate-100">
+                        <i class="fa-solid fa-info-circle mr-1"></i> This shows every single value present in the source Excel file for this row.
+                    </p>
+                    <table class="w-full text-sm text-left border-collapse">
+                        <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
+                            <tr>
+                                <th class="px-4 py-2 border border-slate-200">Field Name</th>
+                                <th class="px-4 py-2 border border-slate-200">Value</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalRawTable" class="font-mono text-slate-700">
+                            </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+            <div class="p-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl flex justify-end">
+                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-2 rounded-lg font-bold text-sm transition-colors">Close</button>
             </div>
         </div>
     </div>
@@ -83,24 +151,25 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="bg-blue-600 text-white w-9 h-9 rounded-lg flex items-center justify-center shadow-md">
-                    <i class="fa-solid fa-box-open"></i>
+                    <i class="fa-solid fa-cube"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg text-slate-800 leading-none">RM Inventory</h1>
-                    <span class="text-xs text-slate-500 font-medium">Master Database</span>
+                    <h1 class="font-bold text-lg text-slate-800 leading-none">Inventory Pro</h1>
+                    <span class="text-xs text-slate-500 font-medium">Master List</span>
                 </div>
             </div>
-            <div class="flex items-center gap-4">
-                <button onclick="location.reload()" class="text-slate-500 hover:text-blue-600 transition-colors text-sm font-medium hidden md:inline-block">
-                    <i class="fa-solid fa-rotate-right mr-1"></i> Refresh
+            <div class="flex items-center gap-3">
+                 <button onclick="exportToExcel()" class="hidden md:flex items-center gap-2 text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors border border-transparent hover:border-green-100">
+                    <i class="fa-solid fa-file-excel"></i> Export
                 </button>
                 <div class="h-6 w-px bg-slate-200 hidden md:block"></div>
+                
                 <div class="flex bg-slate-100 p-1 rounded-lg">
                     <button onclick="switchView('table')" id="btn-table" class="px-3 py-1.5 rounded-md text-sm font-medium transition-all bg-white text-blue-600 shadow-sm">
-                        <i class="fa-solid fa-table-list mr-1"></i> List
+                        <i class="fa-solid fa-table-list mr-1"></i>
                     </button>
                     <button onclick="switchView('grid')" id="btn-grid" class="px-3 py-1.5 rounded-md text-sm font-medium transition-all text-slate-500 hover:text-slate-700">
-                        <i class="fa-solid fa-grip mr-1"></i> Cards
+                        <i class="fa-solid fa-grip mr-1"></i>
                     </button>
                 </div>
             </div>
@@ -110,49 +179,58 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
                 <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Items</p>
                 <h3 class="text-3xl font-bold text-slate-800 mt-1" id="kpi-total">-</h3>
             </div>
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-b-4 border-green-500">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 border-b-4 border-green-500">
                 <p class="text-xs font-bold text-green-600 uppercase tracking-wider">Active</p>
                 <h3 class="text-3xl font-bold text-slate-800 mt-1" id="kpi-active">-</h3>
             </div>
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-b-4 border-red-500">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 border-b-4 border-red-500">
                 <p class="text-xs font-bold text-red-600 uppercase tracking-wider">Discontinued</p>
                 <h3 class="text-3xl font-bold text-slate-800 mt-1" id="kpi-inactive">-</h3>
             </div>
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
                 <p class="text-xs font-bold text-blue-500 uppercase tracking-wider">Vendors</p>
                 <h3 class="text-3xl font-bold text-slate-800 mt-1" id="kpi-vendors">-</h3>
             </div>
         </div>
 
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
-            <div class="flex flex-col md:flex-row gap-4 w-full md:w-auto flex-1">
-                <div class="relative w-full md:max-w-md">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
-                    <input type="text" id="globalSearch" placeholder="Search item, code, vendor, remarks..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all">
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 mb-6">
+            <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
+                
+                <div class="relative w-full md:flex-1">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3.5 text-slate-400 text-sm"></i>
+                    <input type="text" id="globalSearch" placeholder="Search item, code, vendor, remarks..." class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-shadow">
                 </div>
-                <select id="catFilter" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg p-2.5 w-full md:w-48 focus:ring-blue-500 focus:border-blue-500">
-                    <option value="">All Categories</option>
-                </select>
-            </div>
-            <div class="text-xs text-slate-400 font-medium whitespace-nowrap">
-                Showing <span id="displayCount" class="text-slate-800 font-bold">0</span> items
+
+                <div class="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+                    <select id="catFilter" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl p-3 min-w-[150px] focus:ring-blue-500 outline-none">
+                        <option value="">All Categories</option>
+                    </select>
+                    <select id="vendorFilter" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl p-3 min-w-[150px] focus:ring-blue-500 outline-none">
+                        <option value="">All Vendors</option>
+                    </select>
+                     <select id="statusFilter" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl p-3 min-w-[150px] focus:ring-blue-500 outline-none">
+                        <option value="">All Statuses</option>
+                        <option value="In Use">In Use</option>
+                        <option value="Discontinued">Discontinued</option>
+                    </select>
+                </div>
             </div>
         </div>
 
-        <div id="tableView" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div id="tableView" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <table id="mainTable" class="w-full text-left border-collapse">
                 <thead class="bg-slate-50 border-b border-slate-200">
                     <tr>
-                        <th class="pl-6 py-4">Status</th>
-                        <th class="py-4">Code</th>
-                        <th class="py-4">Item Name</th>
-                        <th class="py-4">Category</th>
-                        <th class="py-4">Vendor</th>
-                        <th class="pr-6 py-4 text-right">Action</th>
+                        <th class="pl-6 py-4 font-bold text-xs text-slate-500 uppercase">Status</th>
+                        <th class="py-4 font-bold text-xs text-slate-500 uppercase">Code</th>
+                        <th class="py-4 font-bold text-xs text-slate-500 uppercase">Item Name</th>
+                        <th class="py-4 font-bold text-xs text-slate-500 uppercase">Category</th>
+                        <th class="py-4 font-bold text-xs text-slate-500 uppercase">Vendor</th>
+                        <th class="pr-6 py-4 text-right font-bold text-xs text-slate-500 uppercase">Action</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody" class="text-sm text-slate-600">
@@ -163,242 +241,285 @@
         <div id="gridView" class="hidden">
             <div id="gridContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 </div>
+            <div id="noResults" class="hidden text-center py-12 text-slate-400">
+                <i class="fa-solid fa-ghost text-4xl mb-3"></i>
+                <p>No items found matching filters.</p>
+            </div>
         </div>
 
     </main>
 
     <script>
         const FILENAME = 'RM.xlsx';
-        let rawData = [];
+        let rawData = []; // GLOBAL STORE
         let dataTableInst = null;
+        let loadTimeout;
 
+        // --- INIT ---
         $(document).ready(function() {
-            // Load Data immediately using the working method
-            fetchData();
+            attemptFetch();
 
-            // Bind Search Input
-            $('#globalSearch').on('keyup', function() {
-                const val = this.value;
-                if(dataTableInst) dataTableInst.search(val).draw();
-                filterGrid(val, $('#catFilter').val());
-            });
+            // Bind Filters
+            $('#globalSearch').on('keyup', function() { applyFilters(); });
+            $('#catFilter, #vendorFilter, #statusFilter').on('change', function() { applyFilters(); });
 
-            // Bind Category Filter
-            $('#catFilter').on('change', function() {
-                const val = this.value;
-                if(dataTableInst) dataTableInst.column(3).search(val).draw();
-                filterGrid($('#globalSearch').val(), val);
+            // Manual Upload
+            $('#manualFileInput').on('change', function(e) {
+                if(e.target.files[0]) processFile(e.target.files[0]);
             });
         });
 
-        // 1. FETCH DATA (The logic that worked for you)
-        async function fetchData() {
-            try {
-                // Fetch with timestamp to avoid caching old versions
-                const response = await fetch(FILENAME + '?v=' + new Date().getTime());
-                
-                if (!response.ok) {
-                    throw new Error(`Could not find "${FILENAME}".`);
-                }
+        // --- FETCHING ---
+        function attemptFetch() {
+            loadTimeout = setTimeout(() => { showError(); }, 2500);
 
-                const arrayBuffer = await response.arrayBuffer();
-                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-
-                processData(jsonData);
-
-            } catch (error) {
-                const errDiv = document.getElementById('error-msg');
-                errDiv.innerHTML = `<strong>Error:</strong> ${error.message}<br>Check if RM.xlsx is in the GitHub repo.`;
-                errDiv.classList.remove('hidden');
-                $('.spinner').hide();
-            }
+            fetch(FILENAME + '?v=' + new Date().getTime())
+                .then(res => {
+                    if(!res.ok) throw new Error("404");
+                    return res.arrayBuffer();
+                })
+                .then(ab => {
+                    clearTimeout(loadTimeout);
+                    const wb = XLSX.read(ab, {type:'array'});
+                    processData(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]));
+                })
+                .catch(err => {
+                    console.error(err);
+                    // Don't clear timeout, let it error if not resolved
+                });
         }
 
-        // 2. PROCESS DATA & RENDER UI
-        function processData(data) {
-            let active = 0, discontinued = 0;
-            let vendors = new Set();
-            let categories = new Set();
+        function showError() {
+            $('#loader .spinner').hide();
+            $('#loader p').hide();
+            $('#error-msg').removeClass('hidden');
+        }
+
+        function processFile(file) {
+            const r = new FileReader();
+            r.onload = e => {
+                const wb = XLSX.read(e.target.result, {type:'array'});
+                processData(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]));
+            };
+            r.readAsArrayBuffer(file);
+        }
+
+        // --- PROCESSING ---
+        function processData(json) {
+            rawData = json; // UPDATE GLOBAL VAR (CRITICAL FIX)
             
-            const tableBody = $('#tableBody');
-            const gridContainer = $('#gridContainer');
-            const catFilter = $('#catFilter');
-            
-            // Clear previous
-            tableBody.empty();
-            gridContainer.empty();
-            catFilter.html('<option value="">All Categories</option>');
+            if(!rawData || rawData.length === 0) {
+                alert("File Empty");
+                return;
+            }
 
-            data.forEach((row, index) => {
-                // Map Data Columns safely
-                const item = {
-                    id: row['ID'] || index + 1,
-                    status: row['Status'] || 'Unknown',
-                    category: row['Material List::Material_Detail'] || row['Category'] || 'General',
-                    code: row['Item_Code'] || row['Item Code'] || '-',
-                    name: row['Item_Name'] || row['Item Name'] || 'Unnamed Item',
-                    vendor: row['Vendor List 2::Vendor_Name'] || row['Vendor'] || 'Unknown Vendor',
-                    remarks: row['Remarks'] || '',
-                    fullData: row
-                };
-
-                // Stats
-                if (String(item.status).toLowerCase().includes('in use')) active++;
-                else discontinued++;
-                if (item.vendor) vendors.add(item.vendor);
-                if (item.category) categories.add(item.category);
-
-                // Styling classes
-                const isActive = String(item.status).toLowerCase().includes('in use');
-                const pillClass = isActive ? 'pill-active' : 'pill-inactive';
-
-                // --- A. TABLE ROW ---
-                const tr = `
-                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors group">
-                        <td class="pl-6 py-4"><span class="pill ${pillClass}">${item.status}</span></td>
-                        <td class="py-4 font-mono text-xs text-slate-500 font-semibold">${item.code}</td>
-                        <td class="py-4">
-                            <div class="font-bold text-slate-700 group-hover:text-blue-600 transition-colors">${item.name}</div>
-                            ${item.remarks ? `<div class="text-xs text-amber-600 mt-1 max-w-sm truncate"><i class="fa-regular fa-comment mr-1"></i>${item.remarks}</div>` : ''}
-                        </td>
-                        <td class="py-4"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs">${item.category}</span></td>
-                        <td class="py-4 text-slate-500">${item.vendor}</td>
-                        <td class="pr-6 py-4 text-right">
-                            <button onclick='openModal(${index})' class="text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md text-xs font-bold transition-colors">
-                                View Details
-                            </button>
-                        </td>
-                    </tr>
-                `;
-                tableBody.append(tr);
-
-                // --- B. GRID CARD ---
-                const card = `
-                    <div class="item-card bg-white rounded-xl p-5 flex flex-col h-full search-item relative group" data-search="${item.name.toLowerCase()} ${item.code.toLowerCase()} ${item.remarks.toLowerCase()}" data-cat="${item.category}">
-                        <div class="flex justify-between items-start mb-3">
-                            <span class="pill ${pillClass}">${item.status}</span>
-                            <span class="text-xs font-mono text-slate-400">#${item.id}</span>
-                        </div>
-                        
-                        <h4 class="font-bold text-slate-800 leading-tight mb-2 group-hover:text-blue-600 transition-colors">${item.name}</h4>
-                        <div class="text-xs text-slate-500 font-mono mb-4 bg-slate-50 inline-block px-2 py-1 rounded border border-slate-100 w-fit">${item.code}</div>
-                        
-                        <div class="space-y-2 mb-4 flex-grow">
-                            <div class="flex items-center text-sm text-slate-600">
-                                <i class="fa-solid fa-layer-group w-5 text-slate-400 text-center mr-2"></i> ${item.category}
-                            </div>
-                            <div class="flex items-center text-sm text-slate-600">
-                                <i class="fa-solid fa-store w-5 text-slate-400 text-center mr-2"></i> ${item.vendor}
-                            </div>
-                        </div>
-
-                        ${item.remarks ? `
-                            <div class="bg-yellow-50 border border-yellow-100 rounded-lg p-3 mb-4">
-                                <p class="text-xs text-yellow-800 italic leading-relaxed">
-                                    <i class="fa-solid fa-quote-left mr-1 text-yellow-500"></i> ${item.remarks}
-                                </p>
-                            </div>
-                        ` : ''}
-
-                        <button onclick='openModal(${index})' class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-semibold rounded-lg transition-colors mt-auto">
-                            View Full Details
-                        </button>
-                    </div>
-                `;
-                gridContainer.append(card);
-            });
-
-            // Update Stats
-            $('#kpi-total').text(data.length);
-            $('#kpi-active').text(active);
-            $('#kpi-inactive').text(discontinued);
-            $('#kpi-vendors').text(vendors.size);
-            $('#displayCount').text(data.length);
-
-            // Populate Filter Dropdown
-            Array.from(categories).sort().forEach(cat => {
-                catFilter.append(`<option value="${cat}">${cat}</option>`);
-            });
-
-            // Init DataTable
-            if(dataTableInst) dataTableInst.destroy();
-            dataTableInst = $('#mainTable').DataTable({
-                pageLength: 25,
-                dom: 'rtip', // Hide default search box (using custom one)
-                ordering: true,
-                responsive: true
-            });
-
-            // Hide Loader
+            renderDashboard();
             $('#loader').fadeOut();
         }
 
-        // 3. UI HELPER FUNCTIONS
-        function switchView(view) {
-            if(view === 'table') {
-                $('#tableView').removeClass('hidden');
-                $('#gridView').addClass('hidden');
-                $('#btn-table').addClass('bg-white text-blue-600 shadow-sm').removeClass('text-slate-500 hover:text-slate-700');
-                $('#btn-grid').removeClass('bg-white text-blue-600 shadow-sm').addClass('text-slate-500 hover:text-slate-700');
-            } else {
-                $('#tableView').addClass('hidden');
-                $('#gridView').removeClass('hidden');
-                $('#btn-grid').addClass('bg-white text-blue-600 shadow-sm').removeClass('text-slate-500 hover:text-slate-700');
-                $('#btn-table').removeClass('bg-white text-blue-600 shadow-sm').addClass('text-slate-500 hover:text-slate-700');
-            }
+        function renderDashboard() {
+            let active = 0, discontinued = 0;
+            let vendors = new Set(), categories = new Set();
+            
+            const tableBody = $('#tableBody');
+            const gridContainer = $('#gridContainer');
+            
+            tableBody.empty();
+            gridContainer.empty();
+
+            rawData.forEach((row, index) => {
+                // Safe Access
+                const item = {
+                    id: row['ID'] || index+1,
+                    status: row['Status'] || 'Unknown',
+                    cat: row['Material List::Material_Detail'] || row['Category'] || 'General',
+                    code: row['Item_Code'] || row['Item Code'] || '-',
+                    name: row['Item_Name'] || row['Item Name'] || 'Unnamed',
+                    vendor: row['Vendor List 2::Vendor_Name'] || row['Vendor'] || 'Unknown',
+                    remarks: row['Remarks'] || '',
+                    idx: index
+                };
+
+                // Aggregates
+                if(String(item.status).toLowerCase().includes('in use')) active++; else discontinued++;
+                if(item.vendor) vendors.add(item.vendor);
+                if(item.cat) categories.add(item.cat);
+
+                const isActive = String(item.status).toLowerCase().includes('in use');
+                const pillClass = isActive ? 'pill-active' : 'pill-inactive';
+
+                // 1. Table Row
+                const tr = `
+                <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors group">
+                    <td class="pl-6 py-4"><span class="pill ${pillClass}">${item.status}</span></td>
+                    <td class="py-4 font-mono text-xs text-slate-500 font-bold">${item.code}</td>
+                    <td class="py-4">
+                        <div class="font-bold text-slate-700 group-hover:text-blue-600">${item.name}</div>
+                        ${item.remarks ? `<div class="text-xs text-amber-600 mt-1 truncate max-w-xs"><i class="fa-regular fa-comment mr-1"></i>${item.remarks}</div>` : ''}
+                    </td>
+                    <td class="py-4"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-semibold">${item.cat}</span></td>
+                    <td class="py-4 text-slate-500 text-xs font-medium">${item.vendor}</td>
+                    <td class="pr-6 py-4 text-right">
+                        <button onclick="openModal(${index})" class="text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">Details</button>
+                    </td>
+                </tr>`;
+                tableBody.append(tr);
+
+                // 2. Grid Card
+                const card = `
+                <div class="item-card bg-white rounded-2xl p-6 flex flex-col h-full search-item relative group" 
+                     data-search="${item.name.toLowerCase()} ${item.code.toLowerCase()} ${item.remarks.toLowerCase()}" 
+                     data-cat="${item.cat}" data-vendor="${item.vendor}" data-status="${item.status}">
+                    
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="pill ${pillClass}">${item.status}</span>
+                        <span class="text-xs font-mono text-slate-400">#${item.id}</span>
+                    </div>
+                    
+                    <h4 class="font-bold text-slate-800 text-lg leading-tight mb-2 group-hover:text-blue-600 transition-colors">${item.name}</h4>
+                    <div class="text-xs text-slate-500 font-mono mb-5 bg-slate-50 inline-block px-2 py-1 rounded border border-slate-100 w-fit">${item.code}</div>
+                    
+                    <div class="space-y-3 mb-5 flex-grow">
+                        <div class="flex items-center text-sm text-slate-600">
+                            <i class="fa-solid fa-layer-group w-6 text-slate-300"></i> <span class="font-medium">${item.cat}</span>
+                        </div>
+                        <div class="flex items-center text-sm text-slate-600">
+                            <i class="fa-solid fa-store w-6 text-slate-300"></i> <span>${item.vendor}</span>
+                        </div>
+                    </div>
+
+                    ${item.remarks ? `
+                        <div class="bg-yellow-50 border border-yellow-100 rounded-xl p-3 mb-5">
+                            <p class="text-xs text-yellow-800 italic leading-relaxed">
+                                <i class="fa-solid fa-quote-left mr-1 text-yellow-500"></i> ${item.remarks}
+                            </p>
+                        </div>
+                    ` : ''}
+
+                    <button onclick="openModal(${index})" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-blue-700 text-sm font-bold rounded-xl transition-colors mt-auto flex items-center justify-center gap-2">
+                        <i class="fa-regular fa-eye"></i> View Full Details
+                    </button>
+                </div>`;
+                gridContainer.append(card);
+            });
+
+            // Update KPI
+            $('#kpi-total').text(rawData.length);
+            $('#kpi-active').text(active);
+            $('#kpi-inactive').text(discontinued);
+            $('#kpi-vendors').text(vendors.size);
+            $('#displayCount').text(rawData.length);
+
+            // Populate Dropdowns
+            populateSelect('#catFilter', categories);
+            populateSelect('#vendorFilter', vendors);
+
+            // Init Table
+            if(dataTableInst) dataTableInst.destroy();
+            dataTableInst = $('#mainTable').DataTable({
+                pageLength: 25,
+                dom: 'rtip',
+                ordering: true,
+                responsive: true
+            });
         }
 
-        function filterGrid(searchTerm, category) {
-            searchTerm = searchTerm.toLowerCase();
-            let count = 0;
-            $('.search-item').each(function() {
-                const searchData = $(this).data('search');
-                const itemCat = $(this).data('cat');
-                const matchesSearch = String(searchData).includes(searchTerm);
-                const matchesCat = category === '' || itemCat === category;
+        // --- FILTERS ---
+        function applyFilters() {
+            const search = $('#globalSearch').val().toLowerCase();
+            const cat = $('#catFilter').val();
+            const vendor = $('#vendorFilter').val();
+            const status = $('#statusFilter').val();
 
-                if(matchesSearch && matchesCat) {
-                    $(this).removeClass('hidden');
-                    count++;
+            // 1. Filter DataTables
+            if(dataTableInst) {
+                dataTableInst.search(search);
+                dataTableInst.column(3).search(cat); // Cat Col
+                dataTableInst.column(4).search(vendor); // Vendor Col
+                dataTableInst.column(0).search(status); // Status Col
+                dataTableInst.draw();
+            }
+
+            // 2. Filter Grid
+            let visible = 0;
+            $('.search-item').each(function() {
+                const sData = $(this).data('search');
+                const cData = $(this).data('cat');
+                const vData = $(this).data('vendor');
+                const stData = $(this).data('status');
+
+                const matchS = String(sData).includes(search);
+                const matchC = cat === '' || cData === cat;
+                const matchV = vendor === '' || vData === vendor;
+                const matchSt = status === '' || String(stData).includes(status);
+
+                if(matchS && matchC && matchV && matchSt) {
+                    $(this).removeClass('hidden'); visible++;
                 } else {
                     $(this).addClass('hidden');
                 }
             });
-            $('#displayCount').text(count);
+            
+            if(visible === 0) $('#noResults').removeClass('hidden'); 
+            else $('#noResults').addClass('hidden');
         }
 
-        // 4. MODAL LOGIC (Shows ALL hidden data)
+        function populateSelect(id, set) {
+            const sel = $(id);
+            const first = sel.find('option:first');
+            sel.empty().append(first);
+            Array.from(set).sort().forEach(val => sel.append(`<option value="${val}">${val}</option>`));
+        }
+
+        // --- MODAL ---
         function openModal(index) {
             const row = rawData[index];
-            
-            // Header Info
-            $('#modalTitle').text(row['Item_Name'] || row['Item Name'] || 'Unknown');
-            $('#modalSubtitle').text(row['Vendor List 2::Vendor_Name'] || row['Vendor'] || '');
+            if(!row) return;
+
+            // Fill Header
+            $('#modalTitle').text(row['Item_Name'] || row['Item Name'] || 'Unknown Item');
+            $('#modalVendor').text(row['Vendor List 2::Vendor_Name'] || row['Vendor'] || 'Unknown Vendor');
             $('#modalId').text('#' + (row['ID'] || '-'));
+            $('#modalStatus').text(row['Status'] || '');
+            
+            // Status Color
+            const st = String(row['Status']).toLowerCase();
+            const stEl = $('#modalStatus');
+            stEl.removeClass('text-green-600 text-red-600 bg-green-50 bg-red-50 px-2 py-0.5 rounded');
+            if(st.includes('in use')) stEl.addClass('text-green-600 bg-green-50 px-2 py-0.5 rounded');
+            else stEl.addClass('text-red-600 bg-red-50 px-2 py-0.5 rounded');
+
+            // Key Stats
+            $('#modalCode').text(row['Item_Code'] || row['Item Code'] || '-');
+            $('#modalCat').text(row['Material List::Material_Detail'] || row['Category'] || '-');
+            $('#modalPCode').text(row['Product_Code'] || '-');
             $('#modalRemarks').text(row['Remarks'] || 'No remarks provided.');
 
-            // Content Body - Loop through all keys
-            const contentDiv = $('#modalContent');
-            contentDiv.empty();
-
-            const skipKeys = ['Item_Name', 'Item Name', 'ID', 'Vendor List 2::Vendor_Name', 'Vendor', 'Remarks'];
+            // Overview Fields (Filtered)
+            const commonDiv = $('#modalCommonFields').empty();
+            const rawBody = $('#modalRawTable').empty();
+            
+            const skip = ['Item_Name','Item Name','ID','Vendor','Vendor List 2::Vendor_Name','Remarks','Status','Material List::Material_Detail','Category','Item_Code','Item Code','Product_Code'];
 
             Object.keys(row).forEach(key => {
-                if(!skipKeys.includes(key) && row[key]) {
-                    // Clean up key name (remove underscores)
-                    const label = key.replace(/_/g, ' ').replace(/::/g, ' - ');
+                const val = row[key];
+                if(val) {
+                    // Raw Table
+                    rawBody.append(`<tr class="border-b border-slate-100 hover:bg-slate-50"><td class="px-4 py-2 font-semibold text-slate-500">${key}</td><td class="px-4 py-2">${val}</td></tr>`);
                     
-                    contentDiv.append(`
-                        <div class="border-b border-slate-100 pb-2">
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">${label}</p>
-                            <p class="text-sm font-medium text-slate-800 break-words">${row[key]}</p>
-                        </div>
-                    `);
+                    // Overview Grid
+                    if(!skip.includes(key)) {
+                         commonDiv.append(`
+                            <div class="border-b border-slate-100 pb-2">
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${key.replace(/_/g,' ').replace(/::/g,' - ')}</p>
+                                <p class="text-sm font-semibold text-slate-800 break-words">${val}</p>
+                            </div>
+                        `);
+                    }
                 }
             });
 
+            switchTab('overview');
             $('#detailModal').removeClass('opacity-0 pointer-events-none');
             $('#modalPanel').removeClass('scale-95');
             $('body').addClass('modal-active');
@@ -410,10 +531,39 @@
             $('body').removeClass('modal-active');
         }
 
-        // Escape key close
-        document.onkeydown = function(evt) {
-            if (evt.key === "Escape") closeModal();
-        };
+        function switchTab(tab) {
+            $('.tab-btn').removeClass('active');
+            $(`#tab-${tab}`).addClass('active');
+            if(tab === 'overview') {
+                $('#view-overview').removeClass('hidden');
+                $('#view-raw').addClass('hidden');
+            } else {
+                $('#view-overview').addClass('hidden');
+                $('#view-raw').removeClass('hidden');
+            }
+        }
+
+        // --- EXPORT ---
+        function exportToExcel() {
+            const ws = XLSX.utils.json_to_sheet(rawData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Inventory");
+            XLSX.writeFile(wb, "Inventory_Export.xlsx");
+        }
+
+        function switchView(view) {
+            if(view === 'table') {
+                $('#tableView').removeClass('hidden'); $('#gridView').addClass('hidden');
+                $('#btn-table').addClass('bg-white text-blue-600 shadow-sm').removeClass('text-slate-500');
+                $('#btn-grid').removeClass('bg-white text-blue-600 shadow-sm').addClass('text-slate-500');
+            } else {
+                $('#tableView').addClass('hidden'); $('#gridView').removeClass('hidden');
+                $('#btn-grid').addClass('bg-white text-blue-600 shadow-sm').removeClass('text-slate-500');
+                $('#btn-table').removeClass('bg-white text-blue-600 shadow-sm').addClass('text-slate-500');
+            }
+        }
+        
+        document.onkeydown = function(evt) { if (evt.key === "Escape") closeModal(); };
     </script>
 </body>
 </html>
