@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RM Inventory Master</title>
+    <title>RM Inventory Manager</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.tailwindcss.min.css">
-    
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.tailwindcss.min.js"></script>
@@ -19,38 +18,138 @@
 
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; color: #1f2937; }
-        
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
 
-        /* Loader */
-        #loader { position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        /* Loader & Error Screens */
+        #loader-screen { position: fixed; inset: 0; background: rgba(255,255,255,0.98); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.3s; }
         .spinner { width: 50px; height: 50px; border: 4px solid #e5e7eb; border-top: 4px solid #2563eb; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Card Hover Effects */
+        /* Error Box */
+        #error-box { display: none; text-align: center; max-width: 500px; padding: 2rem; background: white; border-radius: 1rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); border: 1px solid #e5e7eb; }
+
+        /* Cards & Pills */
         .item-card { transition: all 0.2s ease; border: 1px solid #e5e7eb; }
         .item-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-color: #bfdbfe; }
-
-        /* Status Pills */
         .pill { padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
         .pill-active { background-color: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
         .pill-inactive { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
 
-        /* Modal Transitions */
+        /* Modal */
         .modal { transition: opacity 0.25s ease; }
         body.modal-active { overflow: hidden; }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
 
-    <div id="loader">
-        <div class="spinner mb-4"></div>
-        <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Loading Dashboard</h2>
-        <p class="text-sm text-slate-500 mt-2 font-medium">Fetching "RM.xlsx" from repository...</p>
+    <div id="loader-screen">
+        <div id="loading-state" class="text-center">
+            <div class="spinner mb-4 mx-auto"></div>
+            <h2 class="text-2xl font-bold text-slate-800">Loading Dashboard</h2>
+            <p class="text-sm text-slate-500 mt-2 font-medium">Attempting to fetch "RM.xlsx"...</p>
+        </div>
+
+        <div id="error-box">
+            <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fa-solid fa-file-circle-xmark text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Could Not Auto-Load File</h3>
+            <p class="text-slate-500 text-sm mb-6 leading-relaxed">
+                The dashboard could not find <strong>RM.xlsx</strong> automatically. This happens if the file isn't uploaded yet, the name doesn't match, or you are running this locally.
+            </p>
+            
+            <label class="block w-full cursor-pointer">
+                <input type="file" id="manualFileInput" class="hidden" accept=".xlsx, .xls, .csv">
+                <div class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-upload"></i> Select RM.xlsx Manually
+                </div>
+            </label>
+        </div>
+    </div>
+
+    <div id="app-content" class="hidden flex flex-col min-h-screen">
+        
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white w-10 h-10 rounded-lg flex items-center justify-center shadow-lg">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg text-slate-800 leading-none">RM Inventory</h1>
+                        <span class="text-xs text-slate-500 font-medium">Master Database</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button onclick="location.reload()" class="text-slate-500 hover:text-blue-600 transition-colors text-sm font-medium">
+                        <i class="fa-solid fa-rotate-right mr-1"></i> Refresh
+                    </button>
+                    <div class="h-6 w-px bg-slate-200"></div>
+                    <div class="flex bg-slate-100 p-1 rounded-lg">
+                        <button onclick="switchView('table')" id="btn-table" class="px-3 py-1.5 rounded-md text-sm font-medium transition-all bg-white text-blue-600 shadow-sm">
+                            <i class="fa-solid fa-table-list mr-1"></i> List
+                        </button>
+                        <button onclick="switchView('grid')" id="btn-grid" class="px-3 py-1.5 rounded-md text-sm font-medium transition-all text-slate-500 hover:text-slate-700">
+                            <i class="fa-solid fa-grip mr-1"></i> Cards
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <p class="text-xs font-bold text-slate-400 uppercase">Total Items</p>
+                    <h3 class="text-3xl font-bold text-slate-800 mt-1" id="kpi-total">-</h3>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-b-4 border-green-500">
+                    <p class="text-xs font-bold text-green-600 uppercase">Active</p>
+                    <h3 class="text-3xl font-bold text-slate-800 mt-1" id="kpi-active">-</h3>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-b-4 border-red-500">
+                    <p class="text-xs font-bold text-red-600 uppercase">Discontinued</p>
+                    <h3 class="text-3xl font-bold text-slate-800 mt-1" id="kpi-inactive">-</h3>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <p class="text-xs font-bold text-blue-500 uppercase">Vendors</p>
+                    <h3 class="text-3xl font-bold text-slate-800 mt-1" id="kpi-vendors">-</h3>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
+                <div class="flex gap-4 w-full md:w-auto flex-1">
+                    <div class="relative w-full max-w-md">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
+                        <input type="text" id="globalSearch" placeholder="Search anything (Name, Code, Remarks)..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <select id="catFilter" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg p-2.5 max-w-xs">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="tableView" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <table id="mainTable" class="w-full text-left border-collapse">
+                    <thead class="bg-slate-50 border-b border-slate-200">
+                        <tr>
+                            <th class="pl-6 py-4">Status</th>
+                            <th class="py-4">Item Code</th>
+                            <th class="py-4">Item Name / Remarks</th>
+                            <th class="py-4">Category</th>
+                            <th class="py-4">Vendor</th>
+                            <th class="pr-6 py-4 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="text-sm"></tbody>
+                </table>
+            </div>
+
+            <div id="gridView" class="hidden">
+                <div id="gridContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+        </main>
     </div>
 
     <div id="detailModal" class="modal opacity-0 pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
@@ -59,189 +158,111 @@
             <div class="p-6 border-b border-slate-100 flex justify-between items-start bg-slate-50 rounded-t-xl">
                 <div>
                     <span id="modalId" class="text-xs font-mono text-slate-400">#ID</span>
-                    <h3 id="modalTitle" class="text-xl font-bold text-slate-800 leading-tight mt-1">Item Name</h3>
-                    <div id="modalSubtitle" class="text-sm text-blue-600 font-medium mt-1">Vendor Name</div>
+                    <h3 id="modalTitle" class="text-xl font-bold text-slate-800 mt-1">Item Name</h3>
+                    <div id="modalSubtitle" class="text-sm text-blue-600 font-medium mt-1">Vendor</div>
                 </div>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-red-500 transition-colors p-2">
-                    <i class="fa-solid fa-xmark fa-xl"></i>
-                </button>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-red-500 p-2"><i class="fa-solid fa-xmark fa-xl"></i></button>
             </div>
             <div class="p-8 overflow-y-auto bg-white">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8" id="modalContent">
-                    </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8" id="modalContent"></div>
                 <div class="mt-8 pt-6 border-t border-slate-100">
-                    <h4 class="text-sm font-bold text-slate-900 uppercase tracking-wide mb-2"><i class="fa-regular fa-comment-dots mr-2"></i>Remarks</h4>
-                    <p id="modalRemarks" class="text-slate-600 bg-yellow-50 p-4 rounded-lg border border-yellow-100 text-sm leading-relaxed italic">No remarks available.</p>
+                    <h4 class="text-sm font-bold text-slate-900 uppercase tracking-wide mb-2">Remarks</h4>
+                    <p id="modalRemarks" class="text-slate-600 bg-yellow-50 p-4 rounded-lg border border-yellow-100 text-sm italic">None</p>
                 </div>
-            </div>
-            <div class="p-4 border-t border-slate-100 bg-slate-50 rounded-b-xl flex justify-end">
-                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-2 rounded-lg font-medium transition-colors">Close</button>
             </div>
         </div>
     </div>
 
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white w-10 h-10 rounded-lg flex items-center justify-center shadow-lg">
-                    <i class="fa-solid fa-boxes-stacked"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-lg text-slate-800 leading-none">RM Inventory</h1>
-                    <span class="text-xs text-slate-500 font-medium">Master Database</span>
-                </div>
-            </div>
-            <div class="flex items-center gap-4">
-                <button onclick="fetchData()" class="text-slate-500 hover:text-blue-600 transition-colors text-sm font-medium">
-                    <i class="fa-solid fa-rotate-right mr-1"></i> Refresh
-                </button>
-                <div class="h-6 w-px bg-slate-200"></div>
-                <div class="flex bg-slate-100 p-1 rounded-lg">
-                    <button onclick="switchView('table')" id="btn-table" class="px-3 py-1.5 rounded-md text-sm font-medium transition-all bg-white text-blue-600 shadow-sm">
-                        <i class="fa-solid fa-table-list mr-1"></i> List
-                    </button>
-                    <button onclick="switchView('grid')" id="btn-grid" class="px-3 py-1.5 rounded-md text-sm font-medium transition-all text-slate-500 hover:text-slate-700">
-                        <i class="fa-solid fa-grip mr-1"></i> Cards
-                    </button>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
-
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Items</p>
-                        <h3 class="text-3xl font-bold text-slate-800 mt-1" id="kpi-total">-</h3>
-                    </div>
-                    <div class="p-2 bg-slate-100 rounded-lg text-slate-500"><i class="fa-solid fa-cube"></i></div>
-                </div>
-            </div>
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-b-4 border-b-green-500">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-xs font-bold text-green-600 uppercase tracking-wider">In Stock / Use</p>
-                        <h3 class="text-3xl font-bold text-slate-800 mt-1" id="kpi-active">-</h3>
-                    </div>
-                    <div class="p-2 bg-green-50 rounded-lg text-green-600"><i class="fa-solid fa-check"></i></div>
-                </div>
-            </div>
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-b-4 border-b-red-500">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-xs font-bold text-red-600 uppercase tracking-wider">Discontinued</p>
-                        <h3 class="text-3xl font-bold text-slate-800 mt-1" id="kpi-inactive">-</h3>
-                    </div>
-                    <div class="p-2 bg-red-50 rounded-lg text-red-600"><i class="fa-solid fa-ban"></i></div>
-                </div>
-            </div>
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-xs font-bold text-blue-500 uppercase tracking-wider">Active Vendors</p>
-                        <h3 class="text-3xl font-bold text-slate-800 mt-1" id="kpi-vendors">-</h3>
-                    </div>
-                    <div class="p-2 bg-blue-50 rounded-lg text-blue-600"><i class="fa-solid fa-truck-fast"></i></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
-            <div class="flex gap-4 w-full md:w-auto">
-                <div class="relative w-full md:w-64">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
-                    <input type="text" id="globalSearch" placeholder="Search items, codes, remarks..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-shadow">
-                </div>
-                <select id="catFilter" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
-                    <option value="">All Categories</option>
-                </select>
-            </div>
-            <div class="text-xs text-slate-400 font-medium">
-                Showing <span id="displayCount" class="text-slate-800 font-bold">0</span> items
-            </div>
-        </div>
-
-        <div id="tableView" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="p-0">
-                <table id="mainTable" class="w-full text-left border-collapse">
-                    <thead class="bg-slate-50 border-b border-slate-200">
-                        <tr>
-                            <th class="pl-6 py-4">Status</th>
-                            <th class="py-4">Item Code</th>
-                            <th class="py-4">Item Name & Details</th>
-                            <th class="py-4">Category</th>
-                            <th class="py-4">Vendor</th>
-                            <th class="pr-6 py-4 text-right">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody" class="text-sm">
-                        </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="gridView" class="hidden">
-            <div id="gridContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                </div>
-        </div>
-
-    </main>
-
     <script>
-        // CONFIG
         const FILE_NAME = 'RM.xlsx'; 
         let rawData = [];
         let dataTableInst = null;
+        let loadTimeout;
 
-        // INIT
+        // ON LOAD
         $(document).ready(function() {
-            fetchData();
-            
-            // Custom Global Search binding
+            // 1. Try to fetch file automatically
+            attemptAutoFetch();
+
+            // 2. Setup Manual Upload Listener (Fallback)
+            $('#manualFileInput').on('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    processFileObject(file);
+                }
+            });
+
+            // 3. Setup Filters
             $('#globalSearch').on('keyup', function() {
                 const val = this.value;
                 if(dataTableInst) dataTableInst.search(val).draw();
-                filterGrid(val);
+                filterGrid(val, $('#catFilter').val());
             });
-
-            // Category Filter binding
             $('#catFilter').on('change', function() {
                 const val = this.value;
-                if(dataTableInst) dataTableInst.column(3).search(val).draw(); // Col 3 is Category
+                if(dataTableInst) dataTableInst.column(3).search(val).draw();
                 filterGrid($('#globalSearch').val(), val);
             });
         });
 
-        // 1. FETCH DATA
-        async function fetchData() {
-            try {
-                $('#loader').removeClass('hidden');
-                const response = await fetch(FILE_NAME + '?v=' + new Date().getTime()); // Cache bust
-                
-                if (!response.ok) throw new Error("File not found");
+        // AUTO FETCH LOGIC
+        function attemptAutoFetch() {
+            // Set a 2-second timeout to show the "Manual Upload" screen if fetch hangs
+            loadTimeout = setTimeout(() => {
+                showErrorScreen();
+            }, 2500);
 
-                const arrayBuffer = await response.arrayBuffer();
-                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                rawData = XLSX.utils.sheet_to_json(firstSheet);
+            fetch(FILE_NAME + '?v=' + new Date().getTime())
+                .then(response => {
+                    if (!response.ok) throw new Error("404 Not Found");
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    clearTimeout(loadTimeout); // Success! Stop the timeout.
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    processWorkbook(workbook);
+                })
+                .catch(err => {
+                    console.error("Auto-fetch failed:", err);
+                    // Don't clear timeout; let it trigger the error screen, or trigger immediately:
+                    clearTimeout(loadTimeout);
+                    showErrorScreen();
+                });
+        }
 
-                if(rawData.length > 0) {
-                    processData(rawData);
-                } else {
-                    alert("Excel file is empty.");
-                }
+        function showErrorScreen() {
+            $('#loading-state').addClass('hidden');
+            $('#error-box').fadeIn();
+        }
 
-            } catch (error) {
-                console.error(error);
-                $('#loader').html(`<div class="text-red-500 text-center"><i class="fa-solid fa-triangle-exclamation fa-2x mb-2"></i><br>Error loading ${FILE_NAME}.<br>Make sure it is uploaded to GitHub.</div>`);
+        // PROCESS FILE
+        function processFileObject(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                processWorkbook(workbook);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processWorkbook(workbook) {
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            rawData = XLSX.utils.sheet_to_json(firstSheet);
+            
+            if(rawData.length > 0) {
+                renderDashboard(rawData);
+            } else {
+                alert("The Excel file seems empty.");
             }
         }
 
-        // 2. PROCESS & RENDER
-        function processData(data) {
+        // RENDER UI
+        function renderDashboard(data) {
+            // Hide Loader
+            $('#loader-screen').fadeOut();
+            $('#app-content').removeClass('hidden');
+
             let active = 0, discontinued = 0;
             let vendors = new Set();
             let categories = new Set();
@@ -252,19 +273,18 @@
             
             tableBody.empty();
             gridContainer.empty();
+            catFilter.html('<option value="">All Categories</option>');
 
             data.forEach((row, index) => {
-                // Flexible Mapping
+                // Map Data safely
                 const item = {
                     id: row['ID'] || index + 1,
                     status: row['Status'] || 'Unknown',
                     category: row['Material List::Material_Detail'] || row['Category'] || 'General',
-                    code: row['Item_Code'] || row['Item Code'] || row['Product_Code'] || '-',
+                    code: row['Item_Code'] || row['Item Code'] || '-',
                     name: row['Item_Name'] || row['Item Name'] || 'Unnamed Item',
-                    vendor: row['Vendor List 2::Vendor_Name'] || row['Vendor'] || 'Unknown Vendor',
-                    remarks: row['Remarks'] || '',
-                    // Store full row for modal
-                    fullData: row
+                    vendor: row['Vendor List 2::Vendor_Name'] || row['Vendor'] || 'Unknown',
+                    remarks: row['Remarks'] || ''
                 };
 
                 // Stats
@@ -273,68 +293,44 @@
                 if (item.vendor) vendors.add(item.vendor);
                 if (item.category) categories.add(item.category);
 
-                // Styling
-                const isItemActive = String(item.status).toLowerCase().includes('in use');
-                const pillClass = isItemActive ? 'pill-active' : 'pill-inactive';
-                const iconClass = isItemActive ? 'fa-check text-green-500' : 'fa-ban text-red-500';
+                const isActive = String(item.status).toLowerCase().includes('in use');
+                const pillClass = isActive ? 'pill-active' : 'pill-inactive';
 
-                // --- A. RENDER TABLE ROW ---
+                // Table Row
                 const tr = `
-                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors group">
+                    <tr class="border-b border-slate-100 hover:bg-slate-50 group">
                         <td class="pl-6 py-4"><span class="pill ${pillClass}">${item.status}</span></td>
-                        <td class="py-4 font-mono text-xs text-slate-500 font-semibold">${item.code}</td>
+                        <td class="py-4 font-mono text-slate-500 font-semibold">${item.code}</td>
                         <td class="py-4">
-                            <div class="font-bold text-slate-700 text-sm group-hover:text-blue-600 transition-colors">${item.name}</div>
-                            ${item.remarks ? `<div class="text-xs text-amber-600 mt-1"><i class="fa-regular fa-comment mr-1"></i>${item.remarks.substring(0, 50)}${item.remarks.length>50?'...':''}</div>` : ''}
+                            <div class="font-bold text-slate-700 group-hover:text-blue-600">${item.name}</div>
+                            ${item.remarks ? `<div class="text-xs text-amber-600 mt-1 truncate max-w-xs"><i class="fa-regular fa-comment mr-1"></i>${item.remarks}</div>` : ''}
                         </td>
-                        <td class="py-4 text-sm text-slate-600"><span class="bg-slate-100 px-2 py-1 rounded text-xs">${item.category}</span></td>
-                        <td class="py-4 text-sm text-slate-500">${item.vendor}</td>
+                        <td class="py-4"><span class="bg-slate-100 px-2 py-1 rounded text-xs text-slate-600">${item.category}</span></td>
+                        <td class="py-4 text-slate-500">${item.vendor}</td>
                         <td class="pr-6 py-4 text-right">
-                            <button onclick='openModal(${index})' class="text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-md text-xs font-bold transition-colors border border-transparent hover:border-blue-100">
-                                View Details
-                            </button>
+                            <button onclick='openModal(${index})' class="text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded text-xs font-bold">Details</button>
                         </td>
-                    </tr>
-                `;
+                    </tr>`;
                 tableBody.append(tr);
 
-                // --- B. RENDER CARD (GRID) ---
+                // Grid Card
                 const card = `
-                    <div class="item-card bg-white rounded-xl p-5 flex flex-col justify-between h-full relative group search-item" data-search="${item.name.toLowerCase()} ${item.code.toLowerCase()} ${item.remarks.toLowerCase()}" data-cat="${item.category}">
+                    <div class="item-card bg-white rounded-xl p-5 flex flex-col justify-between h-full search-item" data-search="${item.name.toLowerCase()} ${item.code.toLowerCase()} ${item.remarks.toLowerCase()}" data-cat="${item.category}">
                         <div>
                             <div class="flex justify-between items-start mb-3">
                                 <span class="pill ${pillClass}">${item.status}</span>
                                 <span class="text-xs font-mono text-slate-400">#${item.id}</span>
                             </div>
-                            <h4 class="font-bold text-slate-800 leading-tight mb-1 group-hover:text-blue-600 transition-colors">${item.name}</h4>
-                            <div class="text-xs text-slate-400 mb-4 font-mono">${item.code}</div>
-                            
-                            <div class="space-y-2 mb-4">
-                                <div class="flex items-center text-sm text-slate-600">
-                                    <i class="fa-solid fa-layer-group w-5 text-slate-400"></i> ${item.category}
-                                </div>
-                                <div class="flex items-center text-sm text-slate-600">
-                                    <i class="fa-solid fa-store w-5 text-slate-400"></i> ${item.vendor}
-                                </div>
+                            <h4 class="font-bold text-slate-800 leading-tight mb-2">${item.name}</h4>
+                            <div class="text-xs text-slate-400 mb-4 font-mono bg-slate-50 inline-block px-2 py-1 rounded">${item.code}</div>
+                            <div class="space-y-1 mb-4">
+                                <div class="text-sm text-slate-600"><i class="fa-solid fa-layer-group w-5 text-slate-400"></i> ${item.category}</div>
+                                <div class="text-sm text-slate-600"><i class="fa-solid fa-store w-5 text-slate-400"></i> ${item.vendor}</div>
                             </div>
-                            
-                            ${item.remarks ? `
-                                <div class="bg-yellow-50 border border-yellow-100 rounded-lg p-3 mb-4">
-                                    <p class="text-xs text-yellow-800 italic leading-relaxed">
-                                        <i class="fa-solid fa-quote-left mr-1 text-yellow-400"></i>
-                                        ${item.remarks}
-                                    </p>
-                                </div>
-                            ` : ''}
+                            ${item.remarks ? `<div class="bg-yellow-50 border border-yellow-100 rounded p-2 mb-4 text-xs text-yellow-800 italic">"${item.remarks}"</div>` : ''}
                         </div>
-                        
-                        <div class="pt-4 border-t border-slate-100 mt-auto">
-                            <button onclick='openModal(${index})' class="w-full py-2 bg-slate-50 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-lg text-sm font-semibold transition-colors">
-                                View Full Details
-                            </button>
-                        </div>
-                    </div>
-                `;
+                        <button onclick='openModal(${index})' class="w-full py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 text-sm font-semibold rounded mt-auto">View Details</button>
+                    </div>`;
                 gridContainer.append(card);
             });
 
@@ -343,111 +339,63 @@
             $('#kpi-active').text(active);
             $('#kpi-inactive').text(discontinued);
             $('#kpi-vendors').text(vendors.size);
-            $('#displayCount').text(data.length);
 
             // Populate Filter
-            Array.from(categories).sort().forEach(cat => {
-                catFilter.append(`<option value="${cat}">${cat}</option>`);
-            });
+            Array.from(categories).sort().forEach(cat => catFilter.append(`<option value="${cat}">${cat}</option>`));
 
             // Init DataTable
             if(dataTableInst) dataTableInst.destroy();
-            dataTableInst = $('#mainTable').DataTable({
-                pageLength: 25,
-                dom: 'rtip', // Hide default search box (we use custom one)
-                ordering: true,
-                responsive: true
-            });
-
-            $('#loader').addClass('hidden');
+            dataTableInst = $('#mainTable').DataTable({ pageLength: 25, dom: 'rtip', responsive: true });
         }
 
-        // 3. UI FUNCTIONS
+        // VIEW SWITCHER
         function switchView(view) {
             if(view === 'table') {
-                $('#tableView').removeClass('hidden');
-                $('#gridView').addClass('hidden');
-                $('#btn-table').addClass('bg-white text-blue-600 shadow-sm').removeClass('text-slate-500 hover:text-slate-700');
-                $('#btn-grid').removeClass('bg-white text-blue-600 shadow-sm').addClass('text-slate-500 hover:text-slate-700');
+                $('#tableView').removeClass('hidden'); $('#gridView').addClass('hidden');
+                $('#btn-table').addClass('bg-white text-blue-600 shadow-sm').removeClass('text-slate-500');
+                $('#btn-grid').removeClass('bg-white text-blue-600 shadow-sm').addClass('text-slate-500');
             } else {
-                $('#tableView').addClass('hidden');
-                $('#gridView').removeClass('hidden');
-                $('#btn-grid').addClass('bg-white text-blue-600 shadow-sm').removeClass('text-slate-500 hover:text-slate-700');
-                $('#btn-table').removeClass('bg-white text-blue-600 shadow-sm').addClass('text-slate-500 hover:text-slate-700');
+                $('#tableView').addClass('hidden'); $('#gridView').removeClass('hidden');
+                $('#btn-grid').addClass('bg-white text-blue-600 shadow-sm').removeClass('text-slate-500');
+                $('#btn-table').removeClass('bg-white text-blue-600 shadow-sm').addClass('text-slate-500');
             }
         }
 
-        // Custom Grid Filter Logic
-        function filterGrid(searchTerm = '', category = '') {
-            searchTerm = searchTerm.toLowerCase();
-            let count = 0;
-            
+        function filterGrid(search, cat) {
+            search = search.toLowerCase();
             $('.search-item').each(function() {
-                const searchData = $(this).data('search'); // name + code + remarks
-                const itemCat = $(this).data('cat');
-                
-                const matchesSearch = String(searchData).includes(searchTerm);
-                const matchesCat = category === '' || itemCat === category;
-
-                if(matchesSearch && matchesCat) {
-                    $(this).show();
-                    count++;
-                } else {
-                    $(this).hide();
-                }
+                const sData = $(this).data('search');
+                const cData = $(this).data('cat');
+                const matchS = String(sData).includes(search);
+                const matchC = cat === '' || cData === cat;
+                $(this).toggle(matchS && matchC);
             });
-            $('#displayCount').text(count);
         }
 
-        // 4. MODAL LOGIC (THE "USEFUL" PART)
+        // MODAL
         function openModal(index) {
             const row = rawData[index];
-            const name = row['Item_Name'] || row['Item Name'] || 'Unknown Item';
-            const id = row['ID'] || '-';
-            const vendor = row['Vendor List 2::Vendor_Name'] || row['Vendor'] || 'Unknown';
-            const remarks = row['Remarks'] || 'No remarks provided.';
-
+            const name = row['Item_Name'] || row['Item Name'] || 'Unknown';
             $('#modalTitle').text(name);
-            $('#modalId').text(`Item #${id}`);
-            $('#modalSubtitle').text(vendor);
-            $('#modalRemarks').text(remarks);
-
-            const contentDiv = $('#modalContent');
-            contentDiv.empty();
-
-            // Loop through ALL columns to show hidden stuff
+            $('#modalSubtitle').text(row['Vendor List 2::Vendor_Name'] || row['Vendor'] || '');
+            $('#modalId').text('#'+ (row['ID']||'-'));
+            $('#modalRemarks').text(row['Remarks'] || 'No remarks.');
+            
+            const div = $('#modalContent').empty();
             Object.keys(row).forEach(key => {
-                // Skip the fields we already showed in header/footer
-                if(['Item_Name', 'Item Name', 'ID', 'Vendor List 2::Vendor_Name', 'Vendor', 'Remarks'].includes(key)) return;
-
-                const val = row[key];
-                if(val) { // Only show non-empty fields
-                    // Beautify Key Name (remove underscores, etc)
-                    let label = key.replace(/_/g, ' ').replace(/::/g, ' - ');
-                    
-                    const itemHtml = `
-                        <div class="border-b border-slate-50 pb-2">
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">${label}</p>
-                            <p class="text-sm font-medium text-slate-800 break-words">${val}</p>
-                        </div>
-                    `;
-                    contentDiv.append(itemHtml);
+                if(!['Item_Name','Item Name','ID','Vendor','Vendor List 2::Vendor_Name','Remarks'].includes(key) && row[key]) {
+                    div.append(`<div class="border-b border-slate-50 pb-2"><p class="text-xs font-bold text-slate-400 uppercase">${key.replace(/_/g,' ')}</p><p class="text-sm font-medium text-slate-800">${row[key]}</p></div>`);
                 }
             });
-
+            
             $('#detailModal').removeClass('opacity-0 pointer-events-none');
             $('body').addClass('modal-active');
         }
-
         function closeModal() {
             $('#detailModal').addClass('opacity-0 pointer-events-none');
             $('body').removeClass('modal-active');
         }
-
-        // Close modal on Escape key
-        document.onkeydown = function(evt) {
-            if (evt.key === "Escape") closeModal();
-        };
+        document.onkeydown = function(evt) { if (evt.key === "Escape") closeModal(); };
     </script>
 </body>
 </html>
