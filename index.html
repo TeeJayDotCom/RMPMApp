@@ -3,269 +3,285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RM/PM Inventory Dashboard</title>
+    <title>Material Inventory Dashboard</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.tailwindcss.min.css">
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.tailwindcss.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; color: #334155; }
         
-        /* Custom Table Styling overrides */
-        .dataTables_wrapper .dataTables_length select { padding-right: 2.5rem; border-radius: 0.5rem; border-color: #e2e8f0; }
-        .dataTables_wrapper .dataTables_filter input { padding: 0.5rem 1rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; margin-left: 0.5rem; }
-        table.dataTable thead th { background-color: #f1f5f9; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; padding: 1rem !important; border-bottom: 2px solid #e2e8f0; }
-        table.dataTable tbody td { padding: 1rem !important; border-bottom: 1px solid #f1f5f9; }
-        table.dataTable tbody tr:hover { background-color: #f8fafc; }
-        
-        /* Status Badges */
-        .badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
-        .badge-active { background-color: #dcfce7; color: #166534; }
-        .badge-discontinued { background-color: #fee2e2; color: #991b1b; }
-        .badge-unknown { background-color: #f1f5f9; color: #64748b; }
+        /* Smooth Fade In */
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Loader */
-        #loader { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 50; display: flex; justify-content: center; align-items: center; flex-direction: column; }
-        .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top: 4px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Custom Table Design */
+        .dataTables_wrapper .dataTables_length select { padding-right: 2rem; border-radius: 0.5rem; border: 1px solid #cbd5e1; }
+        .dataTables_wrapper .dataTables_filter input { padding: 0.5rem 1rem; border-radius: 0.5rem; border: 1px solid #cbd5e1; margin-left: 0.5rem; outline: none; transition: border-color 0.2s; }
+        .dataTables_wrapper .dataTables_filter input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+        
+        table.dataTable thead th { background-color: #f8fafc; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0 !important; }
+        table.dataTable tbody td { border-bottom: 1px solid #f1f5f9; padding: 12px 16px !important; vertical-align: middle; }
+        table.dataTable.hover tbody tr:hover { background-color: #f8fafc; cursor: pointer; }
+
+        /* Status Pills */
+        .status-pill { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+        .status-active { background-color: #dcfce7; color: #166534; }
+        .status-inactive { background-color: #fee2e2; color: #991b1b; }
     </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col">
 
-    <div id="loader">
-        <div class="spinner mb-4"></div>
-        <h2 class="text-xl font-semibold text-slate-700">Loading Dashboard...</h2>
-        <p class="text-sm text-slate-500 mt-2">Fetching "RM PM LIST.xlsx" from repository</p>
-    </div>
-
-    <nav class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center gap-3">
-                    <div class="bg-blue-600 text-white p-2 rounded-lg">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    <div class="bg-blue-600 p-1.5 rounded-lg text-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                     </div>
-                    <div>
-                        <h1 class="font-bold text-xl text-slate-800">Inventory Analytics</h1>
-                        <p class="text-xs text-slate-500">Auto-synced from Excel</p>
-                    </div>
+                    <span class="font-bold text-xl text-slate-800 tracking-tight">RM/PM Inventory</span>
                 </div>
                 <div class="flex items-center">
-                    <button onclick="window.location.reload()" class="text-sm text-blue-600 font-medium hover:text-blue-800 flex items-center gap-1">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        Refresh Data
+                    <button onclick="document.getElementById('fileInput').click()" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
+                        Upload New File
                     </button>
                 </div>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
         
-        <div id="error-message" class="hidden mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700"></div>
-
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <p class="text-sm font-medium text-slate-500 mb-1">Total Items</p>
-                <p class="text-3xl font-bold text-slate-800" id="kpi-total">0</p>
-            </div>
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <p class="text-sm font-medium text-slate-500 mb-1">Active Items</p>
-                <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                    <p class="text-3xl font-bold text-slate-800" id="kpi-active">0</p>
+        <div id="upload-section" class="mb-8">
+            <div id="drop-zone" class="relative border-2 border-dashed border-slate-300 rounded-xl bg-white p-10 text-center hover:bg-slate-50 transition-all cursor-pointer group">
+                <input type="file" id="fileInput" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".csv, .xlsx, .xls" />
+                <div id="drop-content">
+                    <div class="mb-4 text-blue-100 group-hover:text-blue-200 transition-colors">
+                        <svg class="w-16 h-16 mx-auto text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-700">Drag & Drop your Excel file here</h3>
+                    <p class="text-slate-500 text-sm mt-2">or click to browse</p>
+                    <div id="auto-load-msg" class="mt-4 text-xs font-mono text-slate-400">Attempting to auto-load "RM PM LIST.xlsx"...</div>
                 </div>
-            </div>
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <p class="text-sm font-medium text-slate-500 mb-1">Discontinued</p>
-                <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-red-500"></span>
-                    <p class="text-3xl font-bold text-slate-800" id="kpi-inactive">0</p>
-                </div>
-            </div>
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <p class="text-sm font-medium text-slate-500 mb-1">Unique Vendors</p>
-                <p class="text-3xl font-bold text-blue-600" id="kpi-vendors">0</p>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <h3 class="text-lg font-bold text-slate-700 mb-4">Material Category Distribution</h3>
-                <div class="relative h-72 w-full">
-                    <canvas id="categoryChart"></canvas>
-                </div>
-            </div>
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <h3 class="text-lg font-bold text-slate-700 mb-4">Status Overview</h3>
-                <div class="relative h-72 w-full flex justify-center">
-                    <canvas id="statusChart"></canvas>
+                <div id="loader" class="hidden absolute inset-0 bg-white/90 flex flex-col items-center justify-center z-10">
+                    <div class="w-10 h-10 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+                    <p class="text-sm font-semibold text-slate-600">Processing Data...</p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                <h3 class="text-lg font-bold text-slate-700">Detailed Material List</h3>
-                <span class="text-xs text-slate-500 bg-white border px-2 py-1 rounded">Auto-Sort enabled</span>
+        <div id="dashboard" class="hidden fade-in">
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wide">Total Inventory</p>
+                    <p class="text-3xl font-bold text-slate-800 mt-1" id="total-items">0</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 border-l-4 border-green-500">
+                    <p class="text-xs font-bold text-green-600 uppercase tracking-wide">Active Items</p>
+                    <p class="text-3xl font-bold text-slate-800 mt-1" id="active-items">0</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 border-l-4 border-red-500">
+                    <p class="text-xs font-bold text-red-600 uppercase tracking-wide">Discontinued</p>
+                    <p class="text-3xl font-bold text-slate-800 mt-1" id="inactive-items">0</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
+                    <p class="text-xs font-bold text-blue-500 uppercase tracking-wide">Unique Vendors</p>
+                    <p class="text-3xl font-bold text-slate-800 mt-1" id="vendor-count">0</p>
+                </div>
             </div>
-            <div class="p-6">
-                <table id="mainTable" class="w-full text-left border-collapse stripe hover row-border">
-                    <thead>
-                        <tr>
-                            <th>Status</th>
-                            <th>ID</th>
-                            <th>Material Detail</th>
-                            <th>Item Code</th>
-                            <th>Item Name</th>
-                            <th>Vendor</th>
-                            <th>Product Code</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                        </tbody>
-                </table>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                    <h3 class="text-base font-bold text-slate-700 mb-4">Items by Category</h3>
+                    <div class="relative h-64">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                    <h3 class="text-base font-bold text-slate-700 mb-4">Status Breakdown</h3>
+                    <div class="relative h-64">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                    <h3 class="font-bold text-slate-700">Detailed Records</h3>
+                    <button onclick="exportData()" class="text-xs font-bold text-green-600 hover:text-green-700 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200 transition-colors">
+                        Export .XLSX
+                    </button>
+                </div>
+                <div class="p-4">
+                    <table id="dataTable" class="w-full text-left border-collapse">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Material / Category</th>
+                                <th>Product Details</th>
+                                <th>Item Code</th>
+                                <th>Vendor</th>
+                                <th>ID</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody" class="text-sm text-slate-600"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
-
-        <footer class="mt-12 text-center text-sm text-slate-400 pb-8">
-            <p>Generated by Gemini AI • Requires "RM PM LIST.xlsx" in root directory</p>
-        </footer>
-
     </main>
 
     <script>
-        // --- CONFIGURATION ---
-        const FILE_NAME = 'RM PM LIST.xlsx'; // The file fetcher looks for
+        // File to auto-load (must be in same folder)
+        const AUTO_LOAD_FILE = 'RM PM LIST.xlsx';
         
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchExcelFile();
+        // Globals
+        let rawData = [];
+        let categoryChartInst = null;
+        let statusChartInst = null;
+        let tableInst = null;
+
+        $(document).ready(function() {
+            // Try auto-loading immediately
+            attemptAutoLoad();
+
+            // File Input Listener
+            $('#fileInput').on('change', function(e) {
+                const file = e.target.files[0];
+                if (file) parseFile(file);
+            });
         });
 
-        // --- 1. FETCH & PARSE EXCEL ---
-        async function fetchExcelFile() {
-            try {
-                // Fetch the file as an ArrayBuffer
-                const response = await fetch(FILE_NAME);
-                
-                if (!response.ok) {
-                    throw new Error(`Could not find "${FILE_NAME}". Please ensure the file is uploaded to the repository in the same folder as index.html.`);
-                }
+        // 1. AUTO LOAD LOGIC
+        function attemptAutoLoad() {
+            // Set a timeout. If fetch takes too long or fails, we stay on the upload screen.
+            const timeout = setTimeout(() => {
+                $('#auto-load-msg').text("Auto-load timed out. Please drag & drop your file.");
+                $('#auto-load-msg').addClass('text-red-400');
+            }, 2000);
 
-                const arrayBuffer = await response.arrayBuffer();
-                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-                
-                // Get first sheet
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                
-                // Convert to JSON
-                const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                
-                if (jsonData.length === 0) {
-                    throw new Error("The Excel file appears to be empty.");
-                }
-
-                processData(jsonData);
-
-            } catch (error) {
-                document.getElementById('loader').classList.add('hidden');
-                const errDiv = document.getElementById('error-message');
-                errDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
-                errDiv.classList.remove('hidden');
-            }
+            fetch(AUTO_LOAD_FILE)
+                .then(response => {
+                    clearTimeout(timeout);
+                    if (!response.ok) throw new Error("File not found");
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    processWorkbook(workbook);
+                })
+                .catch(err => {
+                    clearTimeout(timeout);
+                    console.log("Auto-load failed (expected if local or file missing):", err);
+                    $('#auto-load-msg').text("Could not auto-load 'RM PM LIST.xlsx'. Please drop the file above.");
+                });
         }
 
-        // --- 2. PROCESS DATA FOR UI ---
-        function processData(data) {
-            // Stats Variables
-            let activeCount = 0;
-            let discontinuedCount = 0;
-            const vendors = new Set();
-            const categories = {};
-            
-            const tableBody = document.getElementById('tableBody');
-            tableBody.innerHTML = ''; // Clear existing
+        // 2. PARSE FILE
+        function parseFile(file) {
+            $('#drop-content').addClass('opacity-50');
+            $('#loader').removeClass('hidden');
 
-            data.forEach(row => {
-                // Normalize keys (handle potential CSV header issues)
-                // We map vague headers to clean variable names based on your file structure
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                processWorkbook(workbook);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // 3. PROCESS DATA
+        function processWorkbook(workbook) {
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            rawData = XLSX.utils.sheet_to_json(firstSheet);
+
+            if (rawData.length === 0) {
+                alert("File appears empty!");
+                $('#loader').addClass('hidden');
+                $('#drop-content').removeClass('opacity-50');
+                return;
+            }
+
+            renderDashboard(rawData);
+        }
+
+        // 4. RENDER DASHBOARD
+        function renderDashboard(data) {
+            // Hide upload, show dashboard
+            $('#upload-section').addClass('hidden');
+            $('#dashboard').removeClass('hidden');
+
+            // --- Stats Calculation ---
+            let active = 0, discontinued = 0;
+            let vendors = new Set();
+            let categories = {};
+
+            const tableRows = data.map(row => {
+                // Flexible column mapping
                 const status = row['Status'] || 'Unknown';
                 const id = row['ID'] || '';
-                // "Material List::Material_Detail" seems to be the column name in your CSV
-                const category = row['Material List::Material_Detail'] || row['Material Detail'] || 'Uncategorized';
-                const itemCode = row['Item_Code'] || row['Item Code'] || '';
-                const itemName = row['Item_Name'] || row['Item Name'] || '';
-                // "Vendor List 2::Vendor_Name" in CSV
-                const vendor = row['Vendor List 2::Vendor_Name'] || row['Vendor'] || 'Unknown Vendor';
-                const productCode = row['Product_Code'] || '';
+                const material = row['Material List::Material_Detail'] || row['Material Detail'] || row['Category'] || 'Uncategorized';
+                const details = row['Item_Name'] || row['Item Name'] || row['Description'] || '';
+                const code = row['Item_Code'] || row['Item Code'] || '';
+                const vendor = row['Vendor List 2::Vendor_Name'] || row['Vendor'] || 'Unknown';
 
-                // KPI Logic
-                if (status.toLowerCase().includes('in use')) activeCount++;
-                else discontinuedCount++;
+                // Stats
+                if (String(status).toLowerCase().includes('in use')) active++;
+                else discontinued++;
                 
-                if (vendor) vendors.add(vendor);
+                if (vendor && vendor !== 'Unknown') vendors.add(vendor);
+                if (material) categories[material] = (categories[material] || 0) + 1;
 
-                // Category Logic for Chart
-                if (category) {
-                    categories[category] = (categories[category] || 0) + 1;
-                }
-
-                // Table Row HTML
-                const statusBadge = status.toLowerCase().includes('in use') 
-                    ? `<span class="badge badge-active">In Use</span>` 
-                    : `<span class="badge badge-discontinued">${status}</span>`;
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${statusBadge}</td>
-                    <td class="font-mono text-xs text-slate-500">${id}</td>
-                    <td class="font-medium text-slate-700">${category}</td>
-                    <td class="font-mono text-xs">${itemCode}</td>
-                    <td>${itemName}</td>
-                    <td>${vendor}</td>
-                    <td class="font-mono text-xs text-slate-500">${productCode}</td>
+                // Status Pill
+                const pillClass = String(status).toLowerCase().includes('in use') ? 'status-active' : 'status-inactive';
+                
+                return `
+                    <tr>
+                        <td><span class="status-pill ${pillClass}">${status}</span></td>
+                        <td class="font-medium text-slate-700">${material}</td>
+                        <td>${details}</td>
+                        <td class="font-mono text-xs text-slate-500">${code}</td>
+                        <td>${vendor}</td>
+                        <td class="text-xs text-slate-400">#${id}</td>
+                    </tr>
                 `;
-                tableBody.appendChild(tr);
             });
 
-            // Update UI KPIs
-            document.getElementById('kpi-total').textContent = data.length;
-            document.getElementById('kpi-active').textContent = activeCount;
-            document.getElementById('kpi-inactive').textContent = discontinuedCount;
-            document.getElementById('kpi-vendors').textContent = vendors.size;
-
-            // Initialize Charts
-            initCharts(activeCount, discontinuedCount, categories);
+            // Update DOM
+            $('#total-items').text(data.length);
+            $('#active-items').text(active);
+            $('#inactive-items').text(discontinued);
+            $('#vendor-count').text(vendors.size);
+            $('#tableBody').html(tableRows.join(''));
 
             // Initialize DataTables
-            $('#mainTable').DataTable({
-                responsive: true,
+            if (tableInst) tableInst.destroy();
+            tableInst = $('#dataTable').DataTable({
                 pageLength: 10,
-                order: [[1, 'asc']], // Sort by ID initially
-                dom: '<"flex flex-col md:flex-row justify-between items-center mb-4"lf>rtip',
-                language: {
-                    search: "",
-                    searchPlaceholder: "Search items, codes, vendors...",
-                }
+                responsive: true,
+                language: { search: "", searchPlaceholder: "Search records..." },
+                dom: 'frtip' // custom layout
             });
 
-            // Hide Loader
-            document.getElementById('loader').classList.add('hidden');
+            // Charts
+            renderCharts(active, discontinued, categories);
         }
 
-        // --- 3. CHARTS ---
-        function initCharts(active, inactive, categoryData) {
-            // Status Chart (Doughnut)
-            new Chart(document.getElementById('statusChart'), {
+        // 5. CHARTS
+        function renderCharts(active, inactive, catData) {
+            // Status Doughnut
+            if (statusChartInst) statusChartInst.destroy();
+            const ctxStatus = document.getElementById('statusChart').getContext('2d');
+            statusChartInst = new Chart(ctxStatus, {
                 type: 'doughnut',
                 data: {
                     labels: ['In Use', 'Discontinued'],
@@ -278,19 +294,17 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom' }
-                    }
+                    plugins: { legend: { position: 'bottom' } },
+                    cutout: '70%'
                 }
             });
 
-            // Category Chart (Bar)
-            // Sort categories by count to make chart look better
-            const sortedCats = Object.entries(categoryData)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 10); // Top 10 categories
-
-            new Chart(document.getElementById('categoryChart'), {
+            // Category Bar
+            if (categoryChartInst) categoryChartInst.destroy();
+            const sortedCats = Object.entries(catData).sort((a,b) => b[1] - a[1]).slice(0, 10); // Top 10
+            
+            const ctxCat = document.getElementById('categoryChart').getContext('2d');
+            categoryChartInst = new Chart(ctxCat, {
                 type: 'bar',
                 data: {
                     labels: sortedCats.map(x => x[0]),
@@ -308,11 +322,19 @@
                         y: { beginAtZero: true, grid: { display: false } },
                         x: { grid: { display: false } }
                     },
-                    plugins: {
-                        legend: { display: false }
-                    }
+                    plugins: { legend: { display: false } }
                 }
             });
+        }
+        
+        function exportData() {
+            /* Basic export logic using SheetJS if needed, 
+               but DataTables usually handles view export. 
+               Here is a simple trigger to download original. */
+             const ws = XLSX.utils.json_to_sheet(rawData);
+             const wb = XLSX.utils.book_new();
+             XLSX.utils.book_append_sheet(wb, ws, "Inventory");
+             XLSX.writeFile(wb, "Inventory_Export.xlsx");
         }
     </script>
 </body>
