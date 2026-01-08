@@ -178,11 +178,6 @@
             color: white;
         }
 
-        .badge-warning {
-            background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
-            color: white;
-        }
-
         .badge-danger {
             background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
             color: white;
@@ -331,10 +326,6 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button onclick="exportData()" class="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-lg text-sm font-semibold transition-all duration-300">
-                        <i class="fas fa-file-export"></i>
-                        <span>Export</span>
-                    </button>
                     <button onclick="location.reload()" class="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 flex items-center justify-center transition-all duration-300" title="Refresh">
                         <i class="fas fa-rotate"></i>
                     </button>
@@ -371,14 +362,14 @@
     <main class="flex-grow p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-8">
 
         <!-- Charts Section -->
-        <section id="dashboard-section" class="space-y-8 hidden">
+        <section id="dashboard-section" class="space-y-8">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Status Chart -->
                 <div class="glass-panel p-6">
                     <div class="flex items-center justify-between mb-6">
                         <div>
                             <h3 class="font-bold text-gray-800 text-lg">Inventory Status</h3>
-                            <p class="text-sm text-gray-500">Overview of item status distribution</p>
+                            <p class="text-sm text-gray-500" id="status-chart-desc">Overview of item status distribution</p>
                         </div>
                         <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
                             <i class="fas fa-chart-pie text-blue-600"></i>
@@ -394,7 +385,7 @@
                     <div class="flex items-center justify-between mb-6">
                         <div>
                             <h3 class="font-bold text-gray-800 text-lg">Top Categories</h3>
-                            <p class="text-sm text-gray-500">Most frequent material categories</p>
+                            <p class="text-sm text-gray-500" id="category-chart-desc">Most frequent material categories</p>
                         </div>
                         <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
                             <i class="fas fa-chart-bar text-purple-600"></i>
@@ -446,7 +437,7 @@
         </div>
 
         <!-- Results Area -->
-        <section id="results-area" class="min-h-[60vh] hidden">
+        <section id="results-area" class="min-h-[60vh]">
             <div class="flex items-center justify-between mb-6">
                 <h2 class="text-lg font-bold text-gray-800">Inventory Items</h2>
                 <div class="text-sm text-gray-500">
@@ -457,19 +448,15 @@
             <div id="results-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Items will be dynamically inserted here -->
             </div>
+            
+            <div id="empty-state" class="flex flex-col items-center justify-center py-16 text-gray-400 hidden">
+                <div class="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-50 rounded-full flex items-center justify-center mb-6">
+                    <i class="fas fa-search text-4xl opacity-30"></i>
+                </div>
+                <h3 class="font-semibold text-lg mb-2">No items to display</h3>
+                <p class="text-sm max-w-md text-center">Try adjusting your search or filters to find what you're looking for.</p>
+            </div>
         </section>
-        
-        <div id="empty-state" class="flex flex-col items-center justify-center py-16 text-gray-400">
-            <div class="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-50 rounded-full flex items-center justify-center mb-6">
-                <i class="fas fa-search text-4xl opacity-30"></i>
-            </div>
-            <h3 class="font-semibold text-lg mb-2">Start Searching</h3>
-            <p class="text-sm max-w-md text-center mb-4">Enter a search term in the search bar above to explore your inventory.</p>
-            <div class="text-xs text-gray-400 mt-4">
-                <i class="fas fa-lightbulb mr-2"></i>
-                Try searching for: "PET Resin", "Masterbatch", or a vendor name
-            </div>
-        </div>
     </main>
 
     <!-- Detail Modal -->
@@ -489,10 +476,6 @@
                         <span id="mVendor" class="font-semibold text-blue-600 flex items-center gap-1">
                             <i class="fas fa-building"></i>
                             <span>Vendor</span>
-                        </span>
-                        <span id="mUpdated" class="text-gray-500 flex items-center gap-1">
-                            <i class="fas fa-clock"></i>
-                            <span>Updated recently</span>
                         </span>
                     </div>
                 </div>
@@ -560,7 +543,7 @@
 
             <!-- Modal Footer -->
             <div class="p-6 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl flex justify-between items-center">
-                <div class="text-sm text-gray-500" id="mTimestamp"></div>
+                <div class="text-sm text-gray-500">Click "Copy for WhatsApp" to share details</div>
                 <div class="flex gap-3">
                     <button onclick="copyToWhatsApp()" class="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold rounded-lg shadow-sm transition-all duration-300 flex items-center gap-2">
                         <i class="fab fa-whatsapp"></i>
@@ -686,24 +669,8 @@
             initializeCharts();
             updateCounts();
             
-            // Hide dashboard and results initially
-            $('#dashboard-section').hide();
-            $('#results-area').hide();
-            
-            // Show empty state with instructions
-            $('#empty-state').removeClass('hidden').html(`
-                <div class="flex flex-col items-center justify-center py-16 text-gray-400">
-                    <div class="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-50 rounded-full flex items-center justify-center mb-6">
-                        <i class="fas fa-search text-4xl opacity-30"></i>
-                    </div>
-                    <h3 class="font-semibold text-lg mb-2">Start Searching</h3>
-                    <p class="text-sm max-w-md text-center mb-4">Enter a search term in the search bar above to explore your inventory.</p>
-                    <div class="text-xs text-gray-400 mt-4">
-                        <i class="fas fa-lightbulb mr-2"></i>
-                        Try searching for: "PET Resin", "Masterbatch", or a vendor name
-                    </div>
-                </div>
-            `);
+            // Show empty state initially
+            updateEmptyState();
         }
 
         function updateKPIs() {
@@ -720,7 +687,7 @@
             $('#kpi-vendors').text(stats.vendors.toLocaleString());
         }
 
-        // Vendor-dependent category filter
+        // Two-way dependent filters
         function updateCategoryFilterByVendor(vendor) {
             const catFilter = $('#catFilter');
             const currentValue = catFilter.val();
@@ -747,24 +714,57 @@
             // Restore previous selection if still valid
             if (categories.includes(currentValue)) {
                 catFilter.val(currentValue);
+            } else if (currentValue) {
+                catFilter.val('');
+            }
+        }
+
+        function updateVendorFilterByCategory(category) {
+            const vendorFilter = $('#vendorFilter');
+            const currentValue = vendorFilter.val();
+            
+            // Get unique vendors for the selected category
+            let vendors;
+            if (category) {
+                vendors = [...new Set(AppState.inventory
+                    .filter(item => item.category === category && item.vendor)
+                    .map(item => item.vendor))].sort();
+            } else {
+                vendors = [...new Set(AppState.inventory
+                    .filter(item => item.vendor)
+                    .map(item => item.vendor))].sort();
+            }
+            
+            // Update vendor dropdown
+            vendorFilter.empty();
+            vendorFilter.append('<option value="">All Vendors</option>');
+            vendors.forEach(vendor => {
+                vendorFilter.append(`<option value="${vendor}">${vendor}</option>`);
+            });
+            
+            // Restore previous selection if still valid
+            if (vendors.includes(currentValue)) {
+                vendorFilter.val(currentValue);
+            } else if (currentValue) {
+                vendorFilter.val('');
             }
         }
 
         function populateFilters() {
-            const vendors = [...new Set(AppState.inventory.map(i => i.vendor))].sort();
-            $('#vendorFilter').empty();
-            $('#vendorFilter').append('<option value="">All Vendors</option>');
-            vendors.forEach(vendor => {
-                $('#vendorFilter').append(`<option value="${vendor}">${vendor}</option>`);
-            });
-            
-            // Initialize category filter with all categories
+            // Initialize both filters with all values
+            updateVendorFilterByCategory('');
             updateCategoryFilterByVendor('');
             
-            // Add event listener for vendor filter change
+            // Add event listeners for two-way dependency
             $('#vendorFilter').off('change').on('change', function() {
                 const selectedVendor = $(this).val();
                 updateCategoryFilterByVendor(selectedVendor);
+                applyFilters();
+            });
+            
+            $('#catFilter').off('change').on('change', function() {
+                const selectedCategory = $(this).val();
+                updateVendorFilterByCategory(selectedCategory);
                 applyFilters();
             });
         }
@@ -780,14 +780,14 @@
             // Status Chart
             const statusCtx = document.getElementById('statusChart');
             if (statusCtx) {
-                const statusData = getStatusDistribution();
+                const statusData = getStatusDistribution(AppState.inventory);
                 window.chartInstances.push(new Chart(statusCtx, {
                     type: 'doughnut',
                     data: {
                         labels: statusData.labels,
                         datasets: [{
                             data: statusData.values,
-                            backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#94a3b8'],
+                            backgroundColor: ['#10b981', '#f59e0b'],
                             borderWidth: 0,
                             borderRadius: 8
                         }]
@@ -822,7 +822,7 @@
             // Category Chart
             const categoryCtx = document.getElementById('categoryChart');
             if (categoryCtx) {
-                const categoryData = getTopCategories(8);
+                const categoryData = getTopCategories(AppState.inventory, 8);
                 window.chartInstances.push(new Chart(categoryCtx, {
                     type: 'bar',
                     data: {
@@ -870,19 +870,48 @@
             }
         }
 
-        function getStatusDistribution() {
+        function updateCharts() {
+            const dataToUse = AppState.filteredItems.length > 0 ? AppState.filteredItems : AppState.inventory;
+            
+            // Update status chart
+            if (window.chartInstances && window.chartInstances[0]) {
+                const statusData = getStatusDistribution(dataToUse);
+                window.chartInstances[0].data.labels = statusData.labels;
+                window.chartInstances[0].data.datasets[0].data = statusData.values;
+                window.chartInstances[0].update();
+                
+                // Update chart description
+                const descText = AppState.filteredItems.length === AppState.inventory.length 
+                    ? 'Overview of item status distribution' 
+                    : `Showing status for ${AppState.filteredItems.length} filtered items`;
+                $('#status-chart-desc').text(descText);
+            }
+            
+            // Update category chart
+            if (window.chartInstances && window.chartInstances[1]) {
+                const categoryData = getTopCategories(dataToUse, 8);
+                window.chartInstances[1].data.labels = categoryData.labels;
+                window.chartInstances[1].data.datasets[0].data = categoryData.values;
+                window.chartInstances[1].update();
+                
+                // Update chart description
+                const descText = AppState.filteredItems.length === AppState.inventory.length 
+                    ? 'Most frequent material categories' 
+                    : `Top categories in ${AppState.filteredItems.length} filtered items`;
+                $('#category-chart-desc').text(descText);
+            }
+        }
+
+        function getStatusDistribution(data) {
             const statusCounts = {
                 'In Use': 0,
-                'Discontinued': 0,
-                'Other': 0
+                'Discontinued': 0
             };
             
-            AppState.inventory.forEach(item => {
+            data.forEach(item => {
                 const status = item.status || 'Unknown';
                 if (status === 'In Use' || status === 'Discontinued') {
                     statusCounts[status] = (statusCounts[status] || 0) + 1;
-                } else {
-                    statusCounts['Other'] = (statusCounts['Other'] || 0) + 1;
                 }
             });
             
@@ -897,9 +926,9 @@
             };
         }
 
-        function getTopCategories(limit) {
+        function getTopCategories(data, limit) {
             const categoryCounts = {};
-            AppState.inventory.forEach(item => {
+            data.forEach(item => {
                 const category = item.category || 'Unknown';
                 categoryCounts[category] = (categoryCounts[category] || 0) + 1;
             });
@@ -918,7 +947,7 @@
         let filterTimeout;
         function initializeEventListeners() {
             $('#searchInput').on('input', debounce(applyFilters, CONFIG.DEBOUNCE_DELAY));
-            $('#vendorFilter, #catFilter, #statusFilter').on('change', applyFilters);
+            $('#statusFilter').on('change', applyFilters);
         }
 
         function debounce(func, wait) {
@@ -940,18 +969,6 @@
                 status: $('#statusFilter').val()
             };
             
-            // Show dashboard and results only if there's a search term or filters applied
-            if (AppState.activeFilters.search || AppState.activeFilters.vendor || 
-                AppState.activeFilters.category || AppState.activeFilters.status) {
-                $('#dashboard-section').show();
-                $('#results-area').show();
-                $('#empty-state').hide();
-            } else {
-                $('#dashboard-section').hide();
-                $('#results-area').hide();
-                $('#empty-state').show();
-            }
-            
             AppState.filteredItems = AppState.inventory.filter(item => {
                 const matchesSearch = !AppState.activeFilters.search || 
                     item.searchableText.includes(AppState.activeFilters.search) ||
@@ -970,9 +987,11 @@
                 return matchesSearch && matchesVendor && matchesCategory && matchesStatus;
             });
             
+            updateCharts();
             renderResults();
             updateSearchBadge();
             updateCounts();
+            updateEmptyState();
         }
 
         function clearFilters() {
@@ -980,6 +999,7 @@
             $('#vendorFilter').val('');
             $('#catFilter').val('');
             $('#statusFilter').val('');
+            updateVendorFilterByCategory('');
             updateCategoryFilterByVendor('');
             applyFilters();
             showToast('Filters cleared');
@@ -990,7 +1010,7 @@
             const badge = $('#search-badge');
             const resultCount = $('#result-count');
             
-            if (count > 0) {
+            if (count > 0 && AppState.activeFilters.search) {
                 resultCount.text(count.toLocaleString());
                 badge.removeClass('hidden').addClass('flex');
             } else {
@@ -1003,30 +1023,23 @@
             $('#visible-count').text(AppState.filteredItems.length.toLocaleString());
         }
 
+        function updateEmptyState() {
+            const emptyState = $('#empty-state');
+            if (AppState.filteredItems.length === 0 && (AppState.activeFilters.search || AppState.activeFilters.vendor || AppState.activeFilters.category || AppState.activeFilters.status)) {
+                emptyState.removeClass('hidden');
+            } else {
+                emptyState.addClass('hidden');
+            }
+        }
+
         // Results Rendering
         function renderResults() {
             const container = $('#results-grid');
-            const emptyState = $('#empty-state');
+            container.empty();
             
             if (AppState.filteredItems.length === 0) {
-                container.empty();
-                if (AppState.activeFilters.search || AppState.activeFilters.vendor || 
-                    AppState.activeFilters.category || AppState.activeFilters.status) {
-                    emptyState.removeClass('hidden').html(`
-                        <div class="flex flex-col items-center justify-center py-16 text-gray-400">
-                            <div class="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-50 rounded-full flex items-center justify-center mb-6">
-                                <i class="fas fa-search text-4xl opacity-30"></i>
-                            </div>
-                            <h3 class="font-semibold text-lg mb-2">No items found</h3>
-                            <p class="text-sm max-w-md text-center mb-4">Try adjusting your search or filters</p>
-                        </div>
-                    `);
-                }
                 return;
             }
-            
-            emptyState.addClass('hidden');
-            container.empty();
             
             // Render limited items for performance
             const itemsToRender = AppState.filteredItems.slice(0, CONFIG.ITEMS_PER_PAGE);
@@ -1088,7 +1101,7 @@
             switch(status) {
                 case 'In Use': return 'badge-success';
                 case 'Discontinued': return 'badge-danger';
-                default: return 'badge-warning';
+                default: return 'badge-danger';
             }
         }
 
@@ -1132,7 +1145,6 @@
             $('#mCode').text(item.code);
             $('#mCat').text(item.category);
             $('#mRemarks').text(item.remarks || 'No remarks provided.');
-            $('#mTimestamp').html(`<i class="fas fa-clock"></i> Last updated: ${formatDate(item.timestamp)}`);
             
             // Update status badge
             const statusBadge = $('#mStatus');
@@ -1184,7 +1196,8 @@
             const quickFields = [
                 { label: 'Product Code', value: item.rawData['Product_Code'] },
                 { label: 'Old Item Code', value: item.rawData['Old_Item_Code'] },
-                { label: 'Product Detail', value: item.rawData['RM PM Product List 2::Product_Detail'] }
+                { label: 'Product Detail', value: item.rawData['RM PM Product List 2::Product_Detail'] },
+                { label: 'Item Detail', value: item.rawData['Item_Detail_by_Vendor'] }
             ];
             
             quickFields.forEach(field => {
@@ -1277,16 +1290,11 @@
             }
             
             whatsappMessage += `\n━━━━━━━━━━━━━━━━━━━━\n`;
-            whatsappMessage += `📅 _Last Updated: ${formatDate(item.timestamp)}_\n`;
             whatsappMessage += `🔗 _Shared via Inventory Master Pro_`;
             
             // Copy to clipboard
             navigator.clipboard.writeText(whatsappMessage).then(() => {
                 showToast('Details copied for WhatsApp!', 'success');
-                
-                // Optional: Open WhatsApp with the message (commented out by default)
-                // const encodedMessage = encodeURIComponent(whatsappMessage);
-                // window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
             }).catch(err => {
                 console.error('Failed to copy: ', err);
                 showToast('Failed to copy details', 'error');
@@ -1294,20 +1302,6 @@
         }
 
         // Utility Functions
-        function formatDate(dateString) {
-            if (!dateString) return 'Unknown';
-            try {
-                const date = new Date(dateString);
-                return date.toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                });
-            } catch {
-                return dateString;
-            }
-        }
-
         function showToast(message, type = 'success') {
             const toast = $('#toast');
             const toastMessage = $('#toast-message');
@@ -1340,20 +1334,6 @@
                     toast.css('opacity', '0');
                 }, 300);
             }, 3000);
-        }
-
-        function exportData() {
-            if (AppState.inventory.length === 0) {
-                showToast('No data to export', 'warning');
-                return;
-            }
-            
-            const worksheet = XLSX.utils.json_to_sheet(AppState.inventory.map(i => i.rawData));
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, 'Inventory');
-            XLSX.writeFile(workbook, `inventory_export_${new Date().toISOString().split('T')[0]}.xlsx`);
-            
-            showToast('Data exported successfully');
         }
     </script>
 </body>
