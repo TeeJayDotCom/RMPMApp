@@ -250,6 +250,34 @@
             border-radius: 2px;
         }
 
+        /* Toast Animation */
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        .toast-slide-in {
+            animation: slideInRight 0.3s ease-out forwards;
+        }
+
+        .toast-slide-out {
+            animation: slideOutRight 0.3s ease-in forwards;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .item-card {
@@ -286,14 +314,6 @@
         <p class="text-white/80 text-sm mb-6">Initializing dashboard...</p>
         <div class="progress-bar">
             <div class="progress-fill" id="progressFill"></div>
-        </div>
-        <div id="manual-upload" class="hidden mt-8 text-center">
-            <p class="text-white/70 text-sm mb-3">Taking longer than expected?</p>
-            <label class="cursor-pointer bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2">
-                <i class="fas fa-folder-open"></i>
-                Select Inventory File
-                <input type="file" id="manualFileInput" class="hidden" accept=".xlsx, .xls, .csv">
-            </label>
         </div>
     </div>
 
@@ -336,7 +356,7 @@
                     </div>
                     <div class="text-center">
                         <div class="text-2xl font-bold text-amber-600" id="kpi-pending">-</div>
-                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Pending</div>
+                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Discontinued</div>
                     </div>
                     <div class="text-center">
                         <div class="text-2xl font-bold text-blue-600" id="kpi-vendors">-</div>
@@ -351,7 +371,7 @@
     <main class="flex-grow p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-8">
 
         <!-- Charts Section -->
-        <section id="dashboard-section" class="space-y-8">
+        <section id="dashboard-section" class="space-y-8 hidden">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Status Chart -->
                 <div class="glass-panel p-6">
@@ -413,8 +433,7 @@
                     
                     <select id="statusFilter" class="flex-1 min-w-[150px] bg-white border border-gray-200 text-sm font-semibold text-gray-700 rounded-lg py-2.5 px-3 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-soft cursor-pointer transition-all duration-300">
                         <option value="">All Status</option>
-                        <option value="In Use">Active</option>
-                        <option value="Pending">Pending</option>
+                        <option value="In Use">In Use</option>
                         <option value="Discontinued">Discontinued</option>
                     </select>
                     
@@ -427,7 +446,7 @@
         </div>
 
         <!-- Results Area -->
-        <section id="results-area" class="min-h-[60vh]">
+        <section id="results-area" class="min-h-[60vh] hidden">
             <div class="flex items-center justify-between mb-6">
                 <h2 class="text-lg font-bold text-gray-800">Inventory Items</h2>
                 <div class="text-sm text-gray-500">
@@ -438,25 +457,25 @@
             <div id="results-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Items will be dynamically inserted here -->
             </div>
-            
-            <div id="empty-state" class="flex flex-col items-center justify-center py-16 text-gray-400">
-                <div class="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-50 rounded-full flex items-center justify-center mb-6">
-                    <i class="fas fa-inbox text-4xl opacity-30"></i>
-                </div>
-                <h3 class="font-semibold text-lg mb-2">No items to display</h3>
-                <p class="text-sm max-w-md text-center">Use the search bar above to explore your inventory or upload a spreadsheet to get started.</p>
-                <button onclick="document.getElementById('manualFileInput').click()" class="mt-6 px-6 py-3 bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white font-semibold rounded-lg shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 flex items-center gap-2">
-                    <i class="fas fa-cloud-upload-alt"></i>
-                    Upload Inventory File
-                </button>
-            </div>
         </section>
+        
+        <div id="empty-state" class="flex flex-col items-center justify-center py-16 text-gray-400">
+            <div class="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-50 rounded-full flex items-center justify-center mb-6">
+                <i class="fas fa-search text-4xl opacity-30"></i>
+            </div>
+            <h3 class="font-semibold text-lg mb-2">Start Searching</h3>
+            <p class="text-sm max-w-md text-center mb-4">Enter a search term in the search bar above to explore your inventory.</p>
+            <div class="text-xs text-gray-400 mt-4">
+                <i class="fas fa-lightbulb mr-2"></i>
+                Try searching for: "PET Resin", "Masterbatch", or a vendor name
+            </div>
+        </div>
     </main>
 
     <!-- Detail Modal -->
     <div id="detailModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300" onclick="closeModal()"></div>
-        <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl relative flex flex-col max-h-[90vh] modal-enter">
+        <div class="bg-white w-full max-w-6xl rounded-2xl shadow-2xl relative flex flex-col max-h-[95vh] modal-enter">
             
             <!-- Modal Header -->
             <div class="p-6 border-b border-gray-100 flex justify-between items-start">
@@ -543,9 +562,9 @@
             <div class="p-6 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl flex justify-between items-center">
                 <div class="text-sm text-gray-500" id="mTimestamp"></div>
                 <div class="flex gap-3">
-                    <button onclick="exportItem()" class="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold rounded-lg shadow-sm transition-all duration-300 flex items-center gap-2">
-                        <i class="fas fa-download"></i>
-                        <span>Export</span>
+                    <button onclick="copyToWhatsApp()" class="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold rounded-lg shadow-sm transition-all duration-300 flex items-center gap-2">
+                        <i class="fab fa-whatsapp"></i>
+                        <span>Copy for WhatsApp</span>
                     </button>
                     <button onclick="closeModal()" class="px-6 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold rounded-lg shadow-sm transition-all duration-300">
                         Close
@@ -595,9 +614,6 @@
             
             // Set up event listeners
             initializeEventListeners();
-            
-            // Set up manual file upload
-            $('#manualFileInput').on('change', handleFileUpload);
         });
 
         // Loading Simulation
@@ -608,7 +624,6 @@
                 if (progress >= 100) {
                     progress = 100;
                     clearInterval(interval);
-                    setTimeout(() => $('#manual-upload').fadeIn(), 2000);
                 }
                 $('#progressFill').css('width', `${progress}%`);
             }, 200);
@@ -628,25 +643,9 @@
                 processInventoryData(rawData);
                 showToast('Inventory data loaded successfully');
             } catch (error) {
-                console.warn('Auto-load failed, waiting for manual upload');
-                showToast('Ready for manual file upload', 'warning');
+                console.warn('Auto-load failed:', error);
+                showToast('Failed to load inventory data', 'error');
             }
-        }
-
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const workbook = XLSX.read(e.target.result, { type: 'array' });
-                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                const rawData = XLSX.utils.sheet_to_json(worksheet);
-                
-                processInventoryData(rawData);
-                showToast('File uploaded successfully');
-            };
-            reader.readAsArrayBuffer(file);
         }
 
         // Data Processing
@@ -686,32 +685,87 @@
             populateFilters();
             initializeCharts();
             updateCounts();
+            
+            // Hide dashboard and results initially
+            $('#dashboard-section').hide();
+            $('#results-area').hide();
+            
+            // Show empty state with instructions
+            $('#empty-state').removeClass('hidden').html(`
+                <div class="flex flex-col items-center justify-center py-16 text-gray-400">
+                    <div class="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-50 rounded-full flex items-center justify-center mb-6">
+                        <i class="fas fa-search text-4xl opacity-30"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2">Start Searching</h3>
+                    <p class="text-sm max-w-md text-center mb-4">Enter a search term in the search bar above to explore your inventory.</p>
+                    <div class="text-xs text-gray-400 mt-4">
+                        <i class="fas fa-lightbulb mr-2"></i>
+                        Try searching for: "PET Resin", "Masterbatch", or a vendor name
+                    </div>
+                </div>
+            `);
         }
 
         function updateKPIs() {
             const stats = {
                 total: AppState.inventory.length,
                 active: AppState.inventory.filter(i => i.status === 'In Use').length,
-                pending: AppState.inventory.filter(i => i.status === 'Pending').length,
+                discontinued: AppState.inventory.filter(i => i.status === 'Discontinued').length,
                 vendors: new Set(AppState.inventory.map(i => i.vendor)).size
             };
             
             $('#kpi-total').text(stats.total.toLocaleString());
             $('#kpi-active').text(stats.active.toLocaleString());
-            $('#kpi-pending').text(stats.pending.toLocaleString());
+            $('#kpi-pending').text(stats.discontinued.toLocaleString());
             $('#kpi-vendors').text(stats.vendors.toLocaleString());
+        }
+
+        // Vendor-dependent category filter
+        function updateCategoryFilterByVendor(vendor) {
+            const catFilter = $('#catFilter');
+            const currentValue = catFilter.val();
+            
+            // Get unique categories for the selected vendor
+            let categories;
+            if (vendor) {
+                categories = [...new Set(AppState.inventory
+                    .filter(item => item.vendor === vendor && item.category)
+                    .map(item => item.category))].sort();
+            } else {
+                categories = [...new Set(AppState.inventory
+                    .filter(item => item.category)
+                    .map(item => item.category))].sort();
+            }
+            
+            // Update category dropdown
+            catFilter.empty();
+            catFilter.append('<option value="">All Categories</option>');
+            categories.forEach(category => {
+                catFilter.append(`<option value="${category}">${category}</option>`);
+            });
+            
+            // Restore previous selection if still valid
+            if (categories.includes(currentValue)) {
+                catFilter.val(currentValue);
+            }
         }
 
         function populateFilters() {
             const vendors = [...new Set(AppState.inventory.map(i => i.vendor))].sort();
-            const categories = [...new Set(AppState.inventory.map(i => i.category))].sort();
-            
+            $('#vendorFilter').empty();
+            $('#vendorFilter').append('<option value="">All Vendors</option>');
             vendors.forEach(vendor => {
                 $('#vendorFilter').append(`<option value="${vendor}">${vendor}</option>`);
             });
             
-            categories.forEach(category => {
-                $('#catFilter').append(`<option value="${category}">${category}</option>`);
+            // Initialize category filter with all categories
+            updateCategoryFilterByVendor('');
+            
+            // Add event listener for vendor filter change
+            $('#vendorFilter').off('change').on('change', function() {
+                const selectedVendor = $(this).val();
+                updateCategoryFilterByVendor(selectedVendor);
+                applyFilters();
             });
         }
 
@@ -817,10 +871,24 @@
         }
 
         function getStatusDistribution() {
-            const statusCounts = {};
+            const statusCounts = {
+                'In Use': 0,
+                'Discontinued': 0,
+                'Other': 0
+            };
+            
             AppState.inventory.forEach(item => {
                 const status = item.status || 'Unknown';
-                statusCounts[status] = (statusCounts[status] || 0) + 1;
+                if (status === 'In Use' || status === 'Discontinued') {
+                    statusCounts[status] = (statusCounts[status] || 0) + 1;
+                } else {
+                    statusCounts['Other'] = (statusCounts['Other'] || 0) + 1;
+                }
+            });
+            
+            // Remove entries with 0 count
+            Object.keys(statusCounts).forEach(key => {
+                if (statusCounts[key] === 0) delete statusCounts[key];
             });
             
             return {
@@ -872,6 +940,18 @@
                 status: $('#statusFilter').val()
             };
             
+            // Show dashboard and results only if there's a search term or filters applied
+            if (AppState.activeFilters.search || AppState.activeFilters.vendor || 
+                AppState.activeFilters.category || AppState.activeFilters.status) {
+                $('#dashboard-section').show();
+                $('#results-area').show();
+                $('#empty-state').hide();
+            } else {
+                $('#dashboard-section').hide();
+                $('#results-area').hide();
+                $('#empty-state').show();
+            }
+            
             AppState.filteredItems = AppState.inventory.filter(item => {
                 const matchesSearch = !AppState.activeFilters.search || 
                     item.searchableText.includes(AppState.activeFilters.search) ||
@@ -900,6 +980,7 @@
             $('#vendorFilter').val('');
             $('#catFilter').val('');
             $('#statusFilter').val('');
+            updateCategoryFilterByVendor('');
             applyFilters();
             showToast('Filters cleared');
         }
@@ -929,7 +1010,18 @@
             
             if (AppState.filteredItems.length === 0) {
                 container.empty();
-                emptyState.removeClass('hidden');
+                if (AppState.activeFilters.search || AppState.activeFilters.vendor || 
+                    AppState.activeFilters.category || AppState.activeFilters.status) {
+                    emptyState.removeClass('hidden').html(`
+                        <div class="flex flex-col items-center justify-center py-16 text-gray-400">
+                            <div class="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-50 rounded-full flex items-center justify-center mb-6">
+                                <i class="fas fa-search text-4xl opacity-30"></i>
+                            </div>
+                            <h3 class="font-semibold text-lg mb-2">No items found</h3>
+                            <p class="text-sm max-w-md text-center mb-4">Try adjusting your search or filters</p>
+                        </div>
+                    `);
+                }
                 return;
             }
             
@@ -995,7 +1087,6 @@
         function getStatusClass(status) {
             switch(status) {
                 case 'In Use': return 'badge-success';
-                case 'Pending': return 'badge-warning';
                 case 'Discontinued': return 'badge-danger';
                 default: return 'badge-warning';
             }
@@ -1091,16 +1182,13 @@
             container.empty();
             
             const quickFields = [
-                { label: 'Material Type', value: item.rawData['Material_Type'] },
-                { label: 'Unit Price', value: item.rawData['Unit_Price'] ? `$${parseFloat(item.rawData['Unit_Price']).toFixed(2)}` : 'N/A' },
-                { label: 'Stock Level', value: item.rawData['Stock_Level'] },
-                { label: 'Reorder Point', value: item.rawData['Reorder_Point'] },
-                { label: 'Lead Time', value: item.rawData['Lead_Time'] ? `${item.rawData['Lead_Time']} days` : 'N/A' },
-                { label: 'Storage Location', value: item.rawData['Storage_Location'] }
+                { label: 'Product Code', value: item.rawData['Product_Code'] },
+                { label: 'Old Item Code', value: item.rawData['Old_Item_Code'] },
+                { label: 'Product Detail', value: item.rawData['RM PM Product List 2::Product_Detail'] }
             ];
             
             quickFields.forEach(field => {
-                if (field.value && field.value !== 'N/A') {
+                if (field.value) {
                     container.append(`
                         <div class="bg-gray-50 p-3 rounded-lg">
                             <p class="text-xs font-semibold text-gray-500 mb-1">${field.label}</p>
@@ -1115,10 +1203,13 @@
             const container = $('#mDetailGrid');
             container.empty();
             
-            const excludeFields = ['ID', 'Status', 'Category', 'Item_Code', 'Item_Name', 'Vendor', 'Remarks', 'Last_Updated'];
+            const excludeFields = ['ID', 'Status', 'Material List::Material_Detail', 'Product_Code', 
+                                 'RM PM Product List 2::Product_Detail', 'Item_Code', 'Old_Item_Code', 
+                                 'Item_Name', 'Item_Detail_by_Vendor', 'Vendor List 2::Vendor_Name', 
+                                 'Remarks'];
             
             Object.entries(item.rawData).forEach(([key, value]) => {
-                if (value && !excludeFields.includes(key) && key !== 'Product_Code') {
+                if (value && !excludeFields.includes(key)) {
                     const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                     container.append(`
                         <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
@@ -1142,6 +1233,63 @@
                         <td class="py-3 px-4 text-gray-700">${value || '-'}</td>
                     </tr>
                 `);
+            });
+        }
+
+        // WhatsApp Copy Function
+        function copyToWhatsApp() {
+            if (!AppState.currentModalItem) return;
+            
+            const item = AppState.currentModalItem;
+            
+            // Create a fancy formatted message for WhatsApp
+            let whatsappMessage = `📦 *INVENTORY ITEM DETAILS*\n`;
+            whatsappMessage += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+            
+            // Basic Information
+            whatsappMessage += `🔹 *Item ID:* ${item.id}\n`;
+            whatsappMessage += `🔹 *Status:* ${item.status}\n`;
+            whatsappMessage += `🔹 *Category:* ${item.category}\n`;
+            whatsappMessage += `🔹 *Item Code:* ${item.code}\n`;
+            whatsappMessage += `🔹 *Item Name:* ${item.name}\n`;
+            whatsappMessage += `🔹 *Vendor:* ${item.vendor}\n\n`;
+            
+            // Additional Details
+            if (item.rawData['Old_Item_Code']) {
+                whatsappMessage += `📋 *Previous Code:* ${item.rawData['Old_Item_Code']}\n`;
+            }
+            
+            if (item.rawData['Product_Code']) {
+                whatsappMessage += `📋 *Product Code:* ${item.rawData['Product_Code']}\n`;
+            }
+            
+            if (item.rawData['RM PM Product List 2::Product_Detail']) {
+                whatsappMessage += `📋 *Product Detail:* ${item.rawData['RM PM Product List 2::Product_Detail']}\n`;
+            }
+            
+            if (item.rawData['Item_Detail_by_Vendor']) {
+                whatsappMessage += `📋 *Vendor Detail:* ${item.rawData['Item_Detail_by_Vendor']}\n`;
+            }
+            
+            // Remarks
+            if (item.remarks) {
+                whatsappMessage += `\n📝 *Remarks:*\n${item.remarks}\n`;
+            }
+            
+            whatsappMessage += `\n━━━━━━━━━━━━━━━━━━━━\n`;
+            whatsappMessage += `📅 _Last Updated: ${formatDate(item.timestamp)}_\n`;
+            whatsappMessage += `🔗 _Shared via Inventory Master Pro_`;
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(whatsappMessage).then(() => {
+                showToast('Details copied for WhatsApp!', 'success');
+                
+                // Optional: Open WhatsApp with the message (commented out by default)
+                // const encodedMessage = encodeURIComponent(whatsappMessage);
+                // window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                showToast('Failed to copy details', 'error');
             });
         }
 
@@ -1179,12 +1327,18 @@
                     break;
             }
             
-            // Show toast
+            // Show toast with slide in
+            toast.removeClass('toast-slide-out').addClass('toast-slide-in');
             toast.css('transform', 'translateX(0)');
+            toast.css('opacity', '1');
             
-            // Hide after 3 seconds
+            // Hide after 3 seconds with slide out
             setTimeout(() => {
-                toast.css('transform', 'translateX(100%)');
+                toast.removeClass('toast-slide-in').addClass('toast-slide-out');
+                setTimeout(() => {
+                    toast.css('transform', 'translateX(100%)');
+                    toast.css('opacity', '0');
+                }, 300);
             }, 3000);
         }
 
@@ -1200,17 +1354,6 @@
             XLSX.writeFile(workbook, `inventory_export_${new Date().toISOString().split('T')[0]}.xlsx`);
             
             showToast('Data exported successfully');
-        }
-
-        function exportItem() {
-            if (!AppState.currentModalItem) return;
-            
-            const worksheet = XLSX.utils.json_to_sheet([AppState.currentModalItem.rawData]);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, 'Item Details');
-            XLSX.writeFile(workbook, `item_${AppState.currentModalItem.code}_export.xlsx`);
-            
-            showToast('Item exported successfully');
         }
     </script>
 </body>
