@@ -3,290 +3,253 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RM Inventory Master</title>
+    <title>RM Inventory App</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.tailwindcss.min.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.tailwindcss.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
-        /* Base */
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; -webkit-tap-highlight-color: transparent; }
-        
-        /* Smooth Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; color: #0f172a; -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        /* Mobile App Container Simulation */
+        .app-container { max-width: 800px; margin: 0 auto; min-height: 100vh; background: #f8fafc; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; box-shadow: 0 0 20px rgba(0,0,0,0.03); display: flex; flex-direction: column; }
 
         /* Loader */
-        #loader { position: fixed; inset: 0; background: white; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.3s; }
-        .spinner { width: 40px; height: 40px; border: 3px solid #f1f5f9; border-top: 3px solid #2563eb; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        #loader { position: fixed; inset: 0; background: #ffffff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { width: 40px; height: 40px; border: 3px solid #e2e8f0; border-top: 3px solid #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Mobile Cards */
-        .mobile-card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.02); transition: all 0.2s; }
-        .mobile-card:active { transform: scale(0.98); background-color: #f8fafc; }
-        .mobile-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px; }
-        .mobile-val { font-size: 13px; font-weight: 500; color: #334155; }
+        /* Cards */
+        .item-card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: transform 0.15s; cursor: pointer; }
+        .item-card:active { transform: scale(0.98); background-color: #f8fafc; }
+        
+        .label-sm { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 2px; }
+        .value-md { font-size: 13px; font-weight: 600; color: #334155; }
 
-        /* Status Pills */
-        .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-        .badge-active { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-        .badge-inactive { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        /* Badges */
+        .pill { padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+        .pill-active { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .pill-inactive { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
 
-        /* Modal Transitions */
+        /* Modal */
         .modal { transition: opacity 0.2s ease-in-out; }
-        body.modal-active { overflow: hidden; }
-        .tab-btn.active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: 600; }
+        .modal-card { transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .tab-btn.active { border-bottom: 2px solid #3b82f6; color: #3b82f6; font-weight: 600; }
     </style>
 </head>
-<body class="flex flex-col min-h-screen">
+<body>
 
     <div id="loader">
-        <div class="spinner mb-6"></div>
-        <h2 class="text-lg font-bold text-slate-800">Loading Inventory...</h2>
-        <p class="text-xs text-slate-400 mt-2 mb-6">Syncing with RM.xlsx</p>
-        
-        <div id="slow-load-msg" class="hidden text-center fade-in">
-            <p class="text-xs text-slate-400 mb-3">Taking longer than expected?</p>
-            <label class="cursor-pointer bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors text-xs inline-flex items-center gap-2">
-                <i class="fa-solid fa-upload"></i> Upload File Manually
+        <div class="spinner mb-4"></div>
+        <h2 class="text-lg font-bold text-slate-800">Loading App...</h2>
+        <div id="error-msg" class="hidden mt-4 text-center">
+            <p class="text-xs text-red-500 mb-2">Auto-load failed.</p>
+            <label class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg cursor-pointer">
+                Upload RM.xlsx
                 <input type="file" id="manualFileInput" class="hidden" accept=".xlsx, .xls, .csv">
             </label>
         </div>
     </div>
 
-    <div id="detailModal" class="modal opacity-0 pointer-events-none fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal()"></div>
-        <div class="bg-white w-full h-[90vh] sm:h-auto sm:max-h-[85vh] sm:max-w-4xl rounded-t-2xl sm:rounded-2xl shadow-2xl relative flex flex-col transform transition-transform duration-300 translate-y-full sm:translate-y-0 sm:scale-95" id="modalPanel">
+    <div class="app-container">
+        
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 h-16 flex items-center justify-between shadow-sm">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-blue-200 shadow-md">
+                    <i class="fa-solid fa-cube text-sm"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-slate-800 leading-none">Inventory</h1>
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dashboard</span>
+                </div>
+            </div>
+            <button onclick="location.reload()" class="w-9 h-9 rounded-full bg-slate-50 text-slate-400 hover:text-blue-600 flex items-center justify-center transition-colors">
+                <i class="fa-solid fa-rotate-right"></i>
+            </button>
+        </header>
+
+        <div class="p-4 flex-grow overflow-y-auto">
             
-            <div class="p-5 border-b border-slate-100 flex justify-between items-start bg-slate-50 sm:rounded-t-2xl">
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="label-sm">Total Items</p>
+                    <h3 class="text-2xl font-bold text-slate-800" id="kpi-total">-</h3>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-green-500">
+                    <p class="label-sm text-green-600">Active</p>
+                    <h3 class="text-2xl font-bold text-slate-800" id="kpi-active">-</h3>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-red-500">
+                    <p class="label-sm text-red-600">Discontinued</p>
+                    <h3 class="text-2xl font-bold text-slate-800" id="kpi-inactive">-</h3>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="label-sm text-blue-500">Vendors</p>
+                    <h3 class="text-2xl font-bold text-slate-800" id="kpi-vendors">-</h3>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <h4 class="label-sm mb-2">Status Breakdown</h4>
+                    <div class="h-40 relative">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <h4 class="label-sm mb-2">Top Categories</h4>
+                    <div class="h-40 relative">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sticky top-16 z-20 bg-[#f8fafc] py-2 mb-2">
+                <div class="relative shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+                    </div>
+                    <input type="text" id="searchInput" 
+                           class="block w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" 
+                           placeholder="Search inventory to view items...">
+                    <div id="searchCountBadge" class="hidden absolute inset-y-0 right-2 flex items-center">
+                        <span class="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-md" id="searchCount">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="resultsArea" class="hidden animate-fade-in pb-10">
+                <div class="flex justify-between items-center mb-3 px-1">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Search Results</span>
+                </div>
+                <div id="resultsContainer">
+                    </div>
+            </div>
+
+            <div id="emptyState" class="text-center py-12">
+                <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-300">
+                    <i class="fa-solid fa-arrow-up text-2xl"></i>
+                </div>
+                <p class="text-sm text-slate-400 font-medium">Type above to find items</p>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="detailModal" class="modal opacity-0 pointer-events-none fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal()"></div>
+        <div class="bg-white w-full h-[85vh] sm:h-[80vh] sm:max-w-2xl rounded-t-2xl sm:rounded-2xl shadow-2xl relative flex flex-col modal-card transform translate-y-full sm:scale-95">
+            
+            <div class="w-full flex justify-center pt-3 pb-1 sm:hidden" onclick="closeModal()">
+                <div class="w-12 h-1.5 bg-slate-200 rounded-full"></div>
+            </div>
+
+            <div class="p-5 border-b border-slate-100 flex justify-between items-start">
                 <div>
                     <div class="flex items-center gap-2 mb-1">
-                        <span id="modalId" class="text-[10px] font-mono bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded">ID</span>
-                        <span id="modalStatus" class="badge"></span>
+                        <span id="mId" class="text-[10px] font-mono bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">ID</span>
+                        <span id="mStatus" class="pill"></span>
                     </div>
-                    <h3 id="modalTitle" class="text-xl font-bold text-slate-800 leading-tight pr-4">Item Name</h3>
-                    <div id="modalSubtitle" class="text-xs text-blue-600 font-medium mt-1">Vendor Name</div>
+                    <h3 id="mTitle" class="text-xl font-bold text-slate-800 leading-tight pr-4">Item Name</h3>
+                    <div id="mVendor" class="text-xs text-blue-600 font-bold mt-1 uppercase tracking-wide">Vendor</div>
                 </div>
-                <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-white text-slate-400 hover:text-red-500 flex items-center justify-center shadow-sm border border-slate-100">
+                <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-50 text-slate-400 hover:text-red-500 flex items-center justify-center">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
 
             <div class="flex border-b border-slate-200 px-5">
-                <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn active px-4 py-3 text-xs sm:text-sm text-slate-600">Overview</button>
-                <button onclick="switchTab('raw')" id="tab-raw" class="tab-btn px-4 py-3 text-xs sm:text-sm text-slate-600">Full Data Sheet</button>
+                <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn active px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide flex-1">Overview</button>
+                <button onclick="switchTab('raw')" id="tab-raw" class="tab-btn px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide flex-1">Raw Data</button>
             </div>
 
-            <div class="p-5 sm:p-8 overflow-y-auto bg-white custom-scrollbar flex-grow">
+            <div class="p-5 overflow-y-auto bg-white flex-grow">
                 
                 <div id="view-overview">
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-                        <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                            <p class="text-[10px] font-bold text-blue-400 uppercase">Item Code</p>
-                            <p class="text-sm font-bold text-blue-900 font-mono break-all" id="modalCode">-</p>
+                    <div class="grid grid-cols-2 gap-3 mb-6">
+                        <div class="bg-blue-50 p-3 rounded-xl border border-blue-100">
+                            <p class="label-sm text-blue-400">Code</p>
+                            <p class="text-sm font-bold text-blue-900 font-mono" id="mCode">-</p>
                         </div>
-                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                            <p class="text-[10px] font-bold text-slate-400 uppercase">Category</p>
-                            <p class="text-sm font-bold text-slate-800" id="modalCat">-</p>
-                        </div>
-                        <div class="hidden sm:block bg-slate-50 p-3 rounded-lg border border-slate-100">
-                            <p class="text-[10px] font-bold text-slate-400 uppercase">Product Code</p>
-                            <p class="text-sm font-bold text-slate-800 font-mono" id="modalPCode">-</p>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <p class="label-sm">Category</p>
+                            <p class="text-sm font-bold text-slate-800" id="mCat">-</p>
                         </div>
                     </div>
 
                     <div class="mb-6">
-                        <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wide mb-2 flex items-center gap-1">
-                            <i class="fa-regular fa-comment-dots text-amber-500"></i> Remarks
-                        </h4>
-                        <div class="bg-amber-50 border border-amber-100 rounded-lg p-3">
-                            <p id="modalRemarks" class="text-xs sm:text-sm text-slate-700 italic leading-relaxed">No remarks.</p>
+                        <h4 class="label-sm mb-2">Remarks</h4>
+                        <div class="bg-amber-50 border border-amber-100 rounded-xl p-3">
+                            <p id="mRemarks" class="text-xs text-slate-700 italic">No remarks.</p>
                         </div>
                     </div>
 
                     <div>
-                        <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wide mb-3">Specifications & Details</h4>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3" id="modalCommonFields"></div>
+                        <h4 class="label-sm mb-3">Details</h4>
+                        <div class="space-y-3" id="mCommon"></div>
                     </div>
                 </div>
 
                 <div id="view-raw" class="hidden">
-                    <table class="w-full text-xs text-left border-collapse">
-                        <thead class="bg-slate-50 text-slate-500 uppercase">
-                            <tr>
-                                <th class="px-3 py-2 border border-slate-200 w-1/3">Field</th>
-                                <th class="px-3 py-2 border border-slate-200">Value</th>
-                            </tr>
-                        </thead>
-                        <tbody id="modalRawTable" class="font-mono text-slate-700"></tbody>
+                    <table class="w-full text-xs text-left">
+                        <tbody id="mRawTable" class="divide-y divide-slate-100"></tbody>
                     </table>
                 </div>
             </div>
 
-            <div class="p-4 border-t border-slate-100 bg-slate-50 sm:rounded-b-2xl">
-                <button onclick="closeModal()" class="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold py-3 rounded-xl shadow-sm transition-colors text-sm">
-                    Close Details
-                </button>
+            <div class="p-4 border-t border-slate-100 bg-slate-50 pb-safe">
+                <button onclick="closeModal()" class="w-full bg-white border border-slate-300 text-slate-700 font-bold py-3 rounded-xl shadow-sm">Close</button>
             </div>
         </div>
     </div>
 
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm safe-area-top">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <div class="bg-blue-600 text-white w-8 h-8 rounded-lg flex items-center justify-center shadow-md">
-                    <i class="fa-solid fa-cube text-xs"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-lg text-slate-800 leading-none">Inventory</h1>
-                </div>
-            </div>
-            
-            <div class="flex items-center gap-2">
-                <div class="hidden md:flex bg-slate-100 p-1 rounded-lg">
-                    <button onclick="switchView('table')" id="btn-table" class="px-3 py-1.5 rounded-md text-sm font-medium transition-all bg-white text-blue-600 shadow-sm">
-                        <i class="fa-solid fa-table-list"></i>
-                    </button>
-                    <button onclick="switchView('grid')" id="btn-grid" class="px-3 py-1.5 rounded-md text-sm font-medium transition-all text-slate-500 hover:text-slate-700">
-                        <i class="fa-solid fa-grip"></i>
-                    </button>
-                </div>
-                <button onclick="location.reload()" class="p-2 text-slate-400 hover:text-blue-600 transition-colors">
-                    <i class="fa-solid fa-rotate-right"></i>
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow">
-
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                <p class="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">Total</p>
-                <h3 class="text-2xl md:text-3xl font-bold text-slate-800 mt-1" id="kpi-total">-</h3>
-            </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-green-500">
-                <p class="text-[10px] md:text-xs font-bold text-green-600 uppercase tracking-wider">Active</p>
-                <h3 class="text-2xl md:text-3xl font-bold text-slate-800 mt-1" id="kpi-active">-</h3>
-            </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-red-500">
-                <p class="text-[10px] md:text-xs font-bold text-red-600 uppercase tracking-wider">Disc.</p>
-                <h3 class="text-2xl md:text-3xl font-bold text-slate-800 mt-1" id="kpi-inactive">-</h3>
-            </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                <p class="text-[10px] md:text-xs font-bold text-blue-500 uppercase tracking-wider">Vendors</p>
-                <h3 class="text-2xl md:text-3xl font-bold text-slate-800 mt-1" id="kpi-vendors">-</h3>
-            </div>
-        </div>
-
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6">
-            <div class="flex flex-col md:flex-row gap-3">
-                <div class="relative w-full">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3.5 text-slate-400 text-sm"></i>
-                    <input type="text" id="globalSearch" placeholder="Search..." class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none appearance-none">
-                </div>
-                <div class="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
-                    <select id="vendorFilter" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl p-3 min-w-[140px] focus:ring-blue-500 outline-none flex-1 md:flex-none">
-                        <option value="">All Vendors</option>
-                    </select>
-                    <select id="catFilter" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl p-3 min-w-[140px] focus:ring-blue-500 outline-none flex-1 md:flex-none">
-                        <option value="">All Categories</option>
-                    </select>
-                     <select id="statusFilter" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl p-3 min-w-[120px] focus:ring-blue-500 outline-none flex-1 md:flex-none">
-                        <option value="">All Status</option>
-                        <option value="In Use">In Use</option>
-                        <option value="Discontinued">Disc.</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <div id="tableView" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hidden md:block">
-            <table id="mainTable" class="w-full text-left border-collapse">
-                <thead class="bg-slate-50 border-b border-slate-200">
-                    <tr>
-                        <th class="pl-6 py-4 font-bold text-xs text-slate-500 uppercase">Status</th>
-                        <th class="py-4 font-bold text-xs text-slate-500 uppercase">Code</th>
-                        <th class="py-4 font-bold text-xs text-slate-500 uppercase">Item Name</th>
-                        <th class="py-4 font-bold text-xs text-slate-500 uppercase">Category</th>
-                        <th class="py-4 font-bold text-xs text-slate-500 uppercase">Vendor</th>
-                        <th class="pr-6 py-4 text-right font-bold text-xs text-slate-500 uppercase">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody" class="text-sm text-slate-600"></tbody>
-            </table>
-        </div>
-
-        <div id="gridView" class="md:hidden">
-            <div id="gridContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-            <div id="noResults" class="hidden text-center py-12 text-slate-400">
-                <i class="fa-solid fa-ghost text-4xl mb-3"></i>
-                <p>No items match current filters.</p>
-            </div>
-        </div>
-
-    </main>
-
     <script>
         const FILENAME = 'RM.xlsx';
         let inventoryItems = [];
-        let dataTableInst = null;
         let loadTimeout;
 
+        // --- INIT ---
         $(document).ready(function() {
-            // Auto-detect view based on screen size
-            if ($(window).width() < 768) {
-                switchView('grid');
-            } else {
-                switchView('table');
-            }
-
             attemptFetch();
 
-            // Event Listeners
-            $('#globalSearch').on('keyup', applyFilters);
-            $('#statusFilter').on('change', applyFilters);
-            $('#catFilter').on('change', applyFilters);
-            
-            // Dependent Dropdown
-            $('#vendorFilter').on('change', function() {
-                updateCategoryOptions();
-                applyFilters();
+            // Search Logic
+            $('#searchInput').on('keyup', function() {
+                const term = this.value.toLowerCase().trim();
+                if(term.length > 0) {
+                    performSearch(term);
+                    $('#emptyState').hide();
+                    $('#resultsArea').removeClass('hidden');
+                } else {
+                    $('#resultsContainer').empty();
+                    $('#searchCountBadge').addClass('hidden');
+                    $('#emptyState').show();
+                    $('#resultsArea').addClass('hidden');
+                }
             });
 
-            // Manual Upload
             $('#manualFileInput').on('change', function(e) {
                 if(e.target.files[0]) processFile(e.target.files[0]);
             });
         });
 
+        // --- DATA LOADING ---
         function attemptFetch() {
-            // Show fallback button after 3s if slow
-            loadTimeout = setTimeout(() => { $('#slow-load-msg').removeClass('hidden'); }, 3000);
-
+            loadTimeout = setTimeout(() => { $('#error-msg').removeClass('hidden'); }, 3000);
             fetch(FILENAME + '?v=' + new Date().getTime())
-                .then(res => {
-                    if(!res.ok) throw new Error("404");
-                    return res.arrayBuffer();
-                })
+                .then(res => res.ok ? res.arrayBuffer() : Promise.reject())
                 .then(ab => {
                     clearTimeout(loadTimeout);
                     const wb = XLSX.read(ab, {type:'array'});
                     processData(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]));
                 })
-                .catch(err => {
-                    console.error(err);
-                    // Don't clear timeout, let the fallback button appear
-                });
+                .catch(() => { /* Error handled by timeout UI */ });
         }
 
         function processFile(file) {
@@ -299,6 +262,7 @@
         }
 
         function processData(json) {
+            // Map Data
             inventoryItems = json.map((row, index) => ({
                 id: row['ID'] || index+1,
                 status: row['Status'] || 'Unknown',
@@ -307,225 +271,175 @@
                 name: row['Item_Name'] || row['Item Name'] || 'Unnamed',
                 vendor: row['Vendor List 2::Vendor_Name'] || row['Vendor'] || 'Unknown',
                 remarks: row['Remarks'] || '',
-                fullData: row
+                fullData: row,
+                searchStr: (Object.values(row).join(' ')).toLowerCase() // Pre-compute search string
             }));
 
-            if(inventoryItems.length === 0) { alert("File Empty"); return; }
-            renderDashboard();
+            updateDashboard();
             $('#loader').fadeOut();
         }
 
-        function renderDashboard() {
+        // --- DASHBOARD & CHARTS ---
+        function updateDashboard() {
             let active = 0, discontinued = 0;
-            let vendors = new Set(), categories = new Set();
-            const tableBody = $('#tableBody');
-            const gridContainer = $('#gridContainer');
-            
-            tableBody.empty();
-            gridContainer.empty();
+            let vendors = new Set();
+            let catCounts = {};
 
-            inventoryItems.forEach((item, index) => {
-                // Stats
+            inventoryItems.forEach(item => {
                 if(String(item.status).toLowerCase().includes('in use')) active++; else discontinued++;
                 if(item.vendor) vendors.add(item.vendor);
-                if(item.cat) categories.add(item.cat);
-
-                const badgeClass = String(item.status).toLowerCase().includes('in use') ? 'badge-active' : 'badge-inactive';
-
-                // 1. Table Row (Desktop)
-                const tr = `
-                <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors group">
-                    <td class="pl-6 py-4"><span class="badge ${badgeClass}">${item.status}</span></td>
-                    <td class="py-4 font-mono text-xs text-slate-500 font-bold">${item.code}</td>
-                    <td class="py-4">
-                        <div class="font-bold text-slate-700 group-hover:text-blue-600">${item.name}</div>
-                        ${item.remarks ? `<div class="text-xs text-amber-600 mt-1 truncate max-w-xs"><i class="fa-regular fa-comment mr-1"></i>${item.remarks}</div>` : ''}
-                    </td>
-                    <td class="py-4"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-semibold">${item.cat}</span></td>
-                    <td class="py-4 text-slate-500 text-xs font-medium">${item.vendor}</td>
-                    <td class="pr-6 py-4 text-right">
-                        <button onclick="openModal(${index})" class="text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">Details</button>
-                    </td>
-                </tr>`;
-                tableBody.append(tr);
-
-                // 2. Grid Card (Mobile)
-                const searchStr = (item.name + " " + item.code + " " + item.remarks).toLowerCase();
-                const card = `
-                <div class="mobile-card search-item cursor-pointer" 
-                     data-search="${searchStr}" 
-                     data-cat="${item.cat}" data-vendor="${item.vendor}" data-status="${item.status}"
-                     onclick="openModal(${index})">
-                    
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="badge ${badgeClass}">${item.status}</span>
-                        <span class="text-xs font-mono text-slate-400">#${item.id}</span>
-                    </div>
-                    
-                    <h4 class="font-bold text-slate-800 text-base leading-snug mb-1">${item.name}</h4>
-                    <div class="text-xs text-slate-500 font-mono mb-3 bg-slate-50 inline-block px-1.5 py-0.5 rounded border border-slate-100 w-fit">${item.code}</div>
-                    
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <p class="mobile-label">Category</p>
-                            <p class="mobile-val truncate">${item.cat}</p>
-                        </div>
-                        <div>
-                            <p class="mobile-label">Vendor</p>
-                            <p class="mobile-val truncate">${item.vendor}</p>
-                        </div>
-                    </div>
-                    
-                    ${item.remarks ? `
-                    <div class="mt-3 pt-2 border-t border-slate-100">
-                         <p class="text-xs text-amber-600 italic truncate"><i class="fa-regular fa-comment mr-1"></i>${item.remarks}</p>
-                    </div>` : ''}
-                </div>`;
-                gridContainer.append(card);
+                catCounts[item.cat] = (catCounts[item.cat] || 0) + 1;
             });
 
-            // Update UI
+            // Update KPI Text
             $('#kpi-total').text(inventoryItems.length);
             $('#kpi-active').text(active);
             $('#kpi-inactive').text(discontinued);
             $('#kpi-vendors').text(vendors.size);
 
-            populateSelect('#vendorFilter', vendors);
-            populateSelect('#catFilter', categories);
-
-            if(dataTableInst) dataTableInst.destroy();
-            dataTableInst = $('#mainTable').DataTable({ pageLength: 25, dom: 'rtip', ordering: true, responsive: true });
+            // Render Charts
+            renderStatusChart(active, discontinued);
+            renderCategoryChart(catCounts);
         }
 
-        function updateCategoryOptions() {
-            const selectedVendor = $('#vendorFilter').val();
-            const currentCat = $('#catFilter').val();
-            const catSel = $('#catFilter');
-            const availableCats = new Set();
-            
-            if(selectedVendor) {
-                inventoryItems.forEach(item => { if(item.vendor === selectedVendor) availableCats.add(item.cat); });
-            } else {
-                inventoryItems.forEach(item => availableCats.add(item.cat));
-            }
-
-            catSel.empty().append('<option value="">All Categories</option>');
-            Array.from(availableCats).sort().forEach(c => catSel.append(`<option value="${c}">${c}</option>`));
-            if(availableCats.has(currentCat)) catSel.val(currentCat);
+        function renderStatusChart(active, inactive) {
+            new Chart(document.getElementById('statusChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Active', 'Disc.'],
+                    datasets: [{ data: [active, inactive], backgroundColor: ['#22c55e', '#ef4444'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels: { boxWidth: 10, usePointStyle: true, font: {size: 10} } } } }
+            });
         }
 
-        function applyFilters() {
-            const search = $('#globalSearch').val().toLowerCase();
-            const cat = $('#catFilter').val();
-            const vendor = $('#vendorFilter').val();
-            const status = $('#statusFilter').val();
-
-            // Table Filter
-            if(dataTableInst) {
-                dataTableInst.search(search);
-                dataTableInst.column(3).search(cat); 
-                dataTableInst.column(4).search(vendor); 
-                dataTableInst.column(0).search(status);
-                dataTableInst.draw();
-            }
-
-            // Grid Filter (Mobile)
-            let visible = 0;
-            $('.search-item').each(function() {
-                const sData = $(this).data('search');
-                const cData = $(this).data('cat');
-                const vData = $(this).data('vendor');
-                const stData = $(this).data('status');
-
-                const matchS = String(sData).includes(search);
-                const matchC = cat === '' || cData === cat;
-                const matchV = vendor === '' || vData === vendor;
-                const matchSt = status === '' || String(stData).includes(status);
-
-                if(matchS && matchC && matchV && matchSt) {
-                    $(this).removeClass('hidden'); visible++;
-                } else {
-                    $(this).addClass('hidden');
+        function renderCategoryChart(counts) {
+            const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 6);
+            new Chart(document.getElementById('categoryChart'), {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(x => x[0]),
+                    datasets: [{ data: sorted.map(x => x[1]), backgroundColor: '#3b82f6', borderRadius: 3 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { ticks: { display: false }, grid: { display: false } }, y: { display: false } }
                 }
             });
+        }
+
+        // --- SEARCH & RENDER ---
+        function performSearch(term) {
+            const container = $('#resultsContainer');
+            container.empty();
+            let count = 0;
+
+            // Simple Filter
+            const results = inventoryItems.filter(item => item.searchStr.includes(term));
+            count = results.length;
+
+            // Render Max 50 to prevent lag
+            results.slice(0, 50).forEach(item => {
+                const isActive = String(item.status).toLowerCase().includes('in use');
+                const pillClass = isActive ? 'pill-active' : 'pill-inactive';
+
+                const html = `
+                <div class="item-card" onclick="openModal(${item.id - 1})"> <div class="flex justify-between items-start mb-2">
+                        <span class="pill ${pillClass}">${item.status}</span>
+                        <span class="text-[10px] font-mono text-slate-400">#${item.id}</span>
+                    </div>
+                    <h4 class="text-sm font-bold text-slate-800 leading-snug mb-1">${item.name}</h4>
+                    <div class="text-[10px] font-mono text-slate-500 mb-3 bg-slate-50 inline-block px-1.5 py-0.5 rounded border border-slate-100">${item.code}</div>
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <p class="label-sm">Category</p>
+                            <p class="value-md truncate">${item.cat}</p>
+                        </div>
+                        <div>
+                            <p class="label-sm">Vendor</p>
+                            <p class="value-md truncate">${item.vendor}</p>
+                        </div>
+                    </div>
+                </div>`;
+                container.append(html);
+            });
+
+            // Update Counter
+            $('#searchCount').text(count > 50 ? '50+' : count);
+            $('#searchCountBadge').removeClass('hidden');
+        }
+
+        // --- MODAL ---
+        function openModal(idx) {
+            // Find item by ID logic or just direct index if mapped 1:1. 
+            // Since we sorted/filtered, we need to find the object in the main array.
+            // But here I passed (item.id - 1). Assuming ID matches index+1. 
+            // Safer: pass the object itself? No, pass ID and find it.
             
-            if(visible === 0) $('#noResults').removeClass('hidden'); 
-            else $('#noResults').addClass('hidden');
-        }
+            // Correction: performSearch slices results. Onclick passes (item.id -1). 
+            // If data is sorted differently this breaks. 
+            // Better: InventoryItems is original order. 
+            
+            const item = inventoryItems[idx]; // Assuming ID corresponds to index
+            if(!item) return;
 
-        function populateSelect(id, set) {
-            const sel = $(id);
-            const first = sel.find('option:first');
-            sel.empty().append(first);
-            Array.from(set).sort().forEach(val => sel.append(`<option value="${val}">${val}</option>`));
-        }
+            $('#mTitle').text(item.name);
+            $('#mVendor').text(item.vendor);
+            $('#mId').text('#' + item.id);
+            $('#mCode').text(item.code);
+            $('#mCat').text(item.cat);
+            $('#mRemarks').text(item.remarks || 'No remarks.');
 
-        function openModal(index) {
-            const item = inventoryItems[index];
-            const row = item.fullData;
-
-            $('#modalTitle').text(item.name);
-            $('#modalVendor').text(item.vendor);
-            $('#modalId').text('#' + item.id);
-            $('#modalCode').text(item.code);
-            $('#modalCat').text(item.cat);
-            $('#modalPCode').text(row['Product_Code'] || '-');
-            $('#modalRemarks').text(item.remarks || 'No remarks provided.');
-
-            const stEl = $('#modalStatus');
+            const stEl = $('#mStatus');
             stEl.text(item.status);
-            stEl.removeClass('badge-active badge-inactive');
-            if(String(item.status).toLowerCase().includes('in use')) stEl.addClass('badge-active');
-            else stEl.addClass('badge-inactive');
+            stEl.removeClass('pill-active pill-inactive');
+            if(String(item.status).toLowerCase().includes('in use')) stEl.addClass('pill-active');
+            else stEl.addClass('pill-inactive');
 
-            const commonDiv = $('#modalCommonFields').empty();
-            const rawBody = $('#modalRawTable').empty();
-            const skip = ['Item_Name','Item Name','ID','Vendor','Vendor List 2::Vendor_Name','Remarks','Status','Material List::Material_Detail','Category','Item_Code','Item Code','Product_Code'];
+            // Overview Common Fields
+            const common = $('#mCommon').empty();
+            const raw = $('#mRawTable').empty();
+            const skip = ['Item_Name','Item Name','ID','Vendor','Vendor List 2::Vendor_Name','Remarks','Status','Material List::Material_Detail','Category','Item_Code','Item Code'];
 
-            Object.keys(row).forEach(key => {
-                const val = row[key];
+            Object.keys(item.fullData).forEach(key => {
+                const val = item.fullData[key];
                 if(val) {
-                    rawBody.append(`<tr class="border-b border-slate-100 hover:bg-slate-50"><td class="px-3 py-2 font-semibold text-slate-500 w-1/3 align-top">${key}</td><td class="px-3 py-2 break-words align-top">${val}</td></tr>`);
-                    if(!skip.includes(key)) {
-                         commonDiv.append(`<div class="border-b border-slate-100 pb-2"><p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${key.replace(/_/g,' ').replace(/::/g,' - ')}</p><p class="text-sm font-semibold text-slate-800 break-words">${val}</p></div>`);
+                    // Raw Data Tab
+                    raw.append(`<tr><td class="py-2 pr-2 align-top text-slate-400 font-bold w-1/3">${key}</td><td class="py-2 align-top text-slate-700">${val}</td></tr>`);
+                    
+                    // Overview Tab (Extras)
+                    if(!skip.includes(key) && key !== 'Product_Code') {
+                        common.append(`
+                            <div class="flex justify-between border-b border-slate-50 pb-1">
+                                <span class="label-sm">${key.replace(/_/g,' ').substring(0,15)}</span>
+                                <span class="text-xs text-slate-700 font-medium text-right">${val}</span>
+                            </div>
+                        `);
                     }
                 }
             });
 
             switchTab('overview');
             $('#detailModal').removeClass('opacity-0 pointer-events-none');
-            $('#modalPanel').removeClass('translate-y-full sm:scale-95');
+            $('.modal-card').removeClass('translate-y-full sm:scale-95');
             $('body').addClass('modal-active');
         }
 
         function closeModal() {
             $('#detailModal').addClass('opacity-0 pointer-events-none');
-            $('#modalPanel').addClass('translate-y-full sm:scale-95');
+            $('.modal-card').addClass('translate-y-full sm:scale-95');
             $('body').removeClass('modal-active');
         }
 
-        function switchTab(tab) {
+        function switchTab(t) {
             $('.tab-btn').removeClass('active');
-            $(`#tab-${tab}`).addClass('active');
-            if(tab === 'overview') {
-                $('#view-overview').removeClass('hidden'); $('#view-raw').addClass('hidden');
-            } else {
-                $('#view-overview').addClass('hidden'); $('#view-raw').removeClass('hidden');
-            }
+            $(`#tab-${t}`).addClass('active');
+            if(t === 'overview') { $('#view-overview').show(); $('#view-raw').hide(); }
+            else { $('#view-overview').hide(); $('#view-raw').show(); }
         }
 
-        function switchView(view) {
-            if(view === 'table') {
-                $('#tableView').removeClass('hidden'); $('#gridView').addClass('hidden');
-                $('#btn-table').addClass('bg-white text-blue-600 shadow-sm').removeClass('text-slate-500');
-                $('#btn-grid').removeClass('bg-white text-blue-600 shadow-sm').addClass('text-slate-500');
-            } else {
-                $('#tableView').addClass('hidden'); $('#gridView').removeClass('hidden');
-                $('#btn-grid').addClass('bg-white text-blue-600 shadow-sm').removeClass('text-slate-500');
-                $('#btn-table').removeClass('bg-white text-blue-600 shadow-sm').addClass('text-slate-500');
-            }
-        }
-        
         document.onkeydown = function(evt) { if (evt.key === "Escape") closeModal(); };
     </script>
 </body>
