@@ -37,6 +37,9 @@
             color: var(--text-primary);
             line-height: 1.6;
             overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
         }
 
         /* Custom Scrollbar */
@@ -112,12 +115,15 @@
             50% { opacity: 0.7; }
         }
 
-        /* Glass Morphism */
+        /* Glass Morphism - Retina Enhanced */
         .glass-panel {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.05),
+                0 10px 15px -3px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
             border-radius: 16px;
             transition: all 0.3s ease;
         }
@@ -127,16 +133,19 @@
             transform: translateY(-2px);
         }
 
-        /* Card Styling */
+        /* Card Styling - Retina Enhanced */
         .item-card {
-            background: var(--surface);
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
             border-radius: 12px;
             padding: 1.5rem;
-            border: 1px solid var(--border);
+            border: 1px solid rgba(229, 231, 235, 0.8);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
             cursor: pointer;
+            box-shadow: 
+                0 2px 4px rgba(0, 0, 0, 0.02),
+                0 4px 8px rgba(0, 0, 0, 0.04);
         }
 
         .item-card::before {
@@ -153,8 +162,10 @@
         }
 
         .item-card:hover {
-            border-color: var(--primary-light);
-            box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.1);
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 
+                0 10px 25px -5px rgba(79, 70, 229, 0.12),
+                0 20px 40px -10px rgba(79, 70, 229, 0.08);
         }
 
         .item-card:hover::before {
@@ -295,6 +306,11 @@
         .shadow-soft {
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
+
+        /* Chart cursor pointer */
+        .chart-clickable {
+            cursor: pointer;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -384,8 +400,8 @@
                 <div class="glass-panel p-6">
                     <div class="flex items-center justify-between mb-6">
                         <div>
-                            <h3 class="font-bold text-gray-800 text-lg">Top Categories</h3>
-                            <p class="text-sm text-gray-500" id="category-chart-desc">Most frequent material categories</p>
+                            <h3 class="font-bold text-gray-800 text-lg">All Categories</h3>
+                            <p class="text-sm text-gray-500" id="category-chart-desc">Click any category to filter</p>
                         </div>
                         <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
                             <i class="fas fa-chart-bar text-purple-600"></i>
@@ -824,7 +840,7 @@
             // Category Chart
             const categoryCtx = document.getElementById('categoryChart');
             if (categoryCtx) {
-                const categoryData = getTopCategories(AppState.inventory, 8);
+                const categoryData = getTopCategories(AppState.inventory);
                 window.chartInstances.push(new Chart(categoryCtx, {
                     type: 'bar',
                     data: {
@@ -866,6 +882,17 @@
                                     }
                                 }
                             }
+                        },
+                        // ADDED: Click handler for chart bars
+                        onClick: (evt, elements) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                const clickedLabel = categoryData.fullLabels[index];
+                                // Set category filter
+                                $('#catFilter').val(clickedLabel);
+                                applyFilters();
+                                showToast(`Filtered by: ${clickedLabel}`);
+                            }
                         }
                     }
                 }));
@@ -891,15 +918,15 @@
             
             // Update category chart
             if (window.chartInstances && window.chartInstances[1]) {
-                const categoryData = getTopCategories(dataToUse, 8);
+                const categoryData = getTopCategories(dataToUse);
                 window.chartInstances[1].data.labels = categoryData.labels;
                 window.chartInstances[1].data.datasets[0].data = categoryData.values;
                 window.chartInstances[1].update();
                 
                 // Update chart description
                 const descText = AppState.filteredItems.length === AppState.inventory.length 
-                    ? 'Most frequent material categories' 
-                    : `Top categories in ${AppState.filteredItems.length} filtered items`;
+                    ? 'All material categories (click to filter)' 
+                    : `${AppState.filteredItems.length} filtered items`;
                 $('#category-chart-desc').text(descText);
             }
         }
@@ -928,19 +955,21 @@
             };
         }
 
-        function getTopCategories(data, limit) {
+        // CHANGED: Get ALL categories sorted alphabetically
+        function getTopCategories(data) {
             const categoryCounts = {};
             data.forEach(item => {
                 const category = item.category || 'Unknown';
                 categoryCounts[category] = (categoryCounts[category] || 0) + 1;
             });
             
+            // Sort alphabetically instead of by count
             const sorted = Object.entries(categoryCounts)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, limit);
+                .sort((a, b) => a[0].localeCompare(b[0])); // Alphabetical sort
             
             return {
                 labels: sorted.map(([cat]) => cat.length > 20 ? cat.substring(0, 20) + '...' : cat),
+                fullLabels: sorted.map(([cat]) => cat), // Store full labels for filtering
                 values: sorted.map(([, count]) => count)
             };
         }
@@ -1053,12 +1082,17 @@
             $('#visible-count').text(AppState.filteredItems.length.toLocaleString());
         }
 
+        // CHANGED: Show empty state only when there are no items at all
         function updateEmptyState() {
             const emptyState = $('#empty-state');
-            if (AppState.filteredItems.length === 0 && (AppState.activeFilters.search || AppState.activeFilters.vendor || AppState.activeFilters.category || AppState.activeFilters.status)) {
+            const resultsGrid = $('#results-grid');
+            
+            if (AppState.filteredItems.length === 0) {
                 emptyState.removeClass('hidden');
+                resultsGrid.addClass('hidden');
             } else {
                 emptyState.addClass('hidden');
+                resultsGrid.removeClass('hidden');
             }
         }
 
