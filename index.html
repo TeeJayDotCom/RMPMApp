@@ -643,7 +643,10 @@
                     remarks: row['Remarks'] || '',
                     timestamp: row['Last_Updated'] || new Date().toISOString().split('T')[0],
                     rawData: row,
-                    searchableText: Object.values(row).join(' ').toLowerCase()
+                    // CHANGED: Improved searchable text normalization
+                    searchableText: Object.values(row)
+                        .map(val => String(val || '').toLowerCase().replace(/\s+/g, ' '))
+                        .join(' ')
                 };
                 
                 // Add additional processed fields
@@ -942,6 +945,35 @@
             };
         }
 
+        // NEW FUNCTION: Fuzzy Search
+        function fuzzySearch(item, searchTerm) {
+            if (!searchTerm) return true;
+            
+            // Normalize search term
+            const normalizedSearch = searchTerm.toLowerCase().replace(/\s+/g, ' ').trim();
+            
+            // Split search term into words
+            const searchWords = normalizedSearch.split(/\s+/);
+            
+            // Combine all searchable fields
+            const searchableText = item.searchableText || '';
+            const itemName = item.name.toLowerCase() || '';
+            const itemCode = item.code.toLowerCase() || '';
+            const itemVendor = item.vendor.toLowerCase() || '';
+            const itemCategory = item.category.toLowerCase() || '';
+            const itemRemarks = (item.remarks || '').toLowerCase();
+            
+            // Combine all text
+            const allText = `${searchableText} ${itemName} ${itemCode} ${itemVendor} ${itemCategory} ${itemRemarks}`;
+            
+            // Check if ALL search words appear in the text
+            return searchWords.every(word => {
+                // Skip very short words (optional)
+                if (word.length < 2) return true;
+                return allText.includes(word);
+            });
+        }
+
         // Filtering System
         let filterTimeout;
         function initializeEventListeners() {
@@ -969,10 +1001,9 @@
             };
             
             AppState.filteredItems = AppState.inventory.filter(item => {
+                // CHANGED: Use fuzzy search instead of simple includes
                 const matchesSearch = !AppState.activeFilters.search || 
-                    item.searchableText.includes(AppState.activeFilters.search) ||
-                    item.name.toLowerCase().includes(AppState.activeFilters.search) ||
-                    item.code.toLowerCase().includes(AppState.activeFilters.search);
+                    fuzzySearch(item, AppState.activeFilters.search);
                 
                 const matchesVendor = !AppState.activeFilters.vendor || 
                     item.vendor === AppState.activeFilters.vendor;
@@ -1104,11 +1135,23 @@
             }
         }
 
+        // UPDATED: Better highlighting for multiple words
         function highlightText(text, searchTerm) {
             if (!searchTerm || !text) return text;
             
-            const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-            return text.replace(regex, '<span class="highlight">$1</span>');
+            // Split search term into words
+            const searchWords = searchTerm.toLowerCase().split(/\s+/);
+            let highlightedText = text;
+            
+            // Highlight each search word individually
+            searchWords.forEach(word => {
+                if (word.length > 2) { // Only highlight words with more than 2 characters
+                    const regex = new RegExp(`(${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                    highlightedText = highlightedText.replace(regex, '<span class="highlight">$1</span>');
+                }
+            });
+            
+            return highlightedText;
         }
 
         function loadMoreItems() {
