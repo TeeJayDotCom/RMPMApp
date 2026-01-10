@@ -452,8 +452,8 @@
             </div>
         </div>
 
-        <!-- Results Area -->
-        <section id="results-area" class="min-h-[60vh]">
+        <!-- Results Area - Initially hidden -->
+        <section id="results-area" class="min-h-[60vh] hidden">
             <div class="flex items-center justify-between mb-6">
                 <h2 class="text-lg font-bold text-gray-800">Inventory Items</h2>
                 <div class="text-sm text-gray-500">
@@ -557,7 +557,7 @@
                 </div>
             </div>
 
-            <!-- Modal Footer - Updated with narrower buttons -->
+            <!-- Modal Footer -->
             <div class="p-4 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl flex justify-end items-center">
                 <div class="flex gap-2">
                     <button onclick="copyToWhatsApp()" class="px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold rounded-lg shadow-sm transition-all duration-300 flex items-center gap-2">
@@ -584,7 +584,6 @@
         // Configuration
         const CONFIG = {
             DEFAULT_FILE: 'RM.xlsx',
-            ITEMS_PER_PAGE: 50,
             DEBOUNCE_DELAY: 300
         };
 
@@ -599,7 +598,8 @@
                 status: ''
             },
             charts: {},
-            currentModalItem: null
+            currentModalItem: null,
+            hasUserInteracted: false  // NEW: Track if user has interacted
         };
 
         // Initialize Application
@@ -659,7 +659,7 @@
                     remarks: row['Remarks'] || '',
                     timestamp: row['Last_Updated'] || new Date().toISOString().split('T')[0],
                     rawData: row,
-                    // CHANGED: Improved searchable text normalization
+                    // Improved searchable text normalization
                     searchableText: Object.values(row)
                         .map(val => String(val || '').toLowerCase().replace(/\s+/g, ' '))
                         .join(' ')
@@ -676,7 +676,7 @@
             });
             
             initializeDashboard();
-            applyFilters();
+            // Don't apply filters on initial load - keep results area hidden
             $('#loader').fadeOut(500);
         }
 
@@ -687,8 +687,8 @@
             initializeCharts();
             updateCounts();
             
-            // Show empty state initially
-            updateEmptyState();
+            // Keep results area hidden initially
+            $('#results-area').addClass('hidden');
         }
 
         function updateKPIs() {
@@ -883,9 +883,10 @@
                                 }
                             }
                         },
-                        // ADDED: Click handler for chart bars
+                        // Click handler for chart bars
                         onClick: (evt, elements) => {
                             if (elements.length > 0) {
+                                AppState.hasUserInteracted = true;
                                 const index = elements[0].index;
                                 const clickedLabel = categoryData.fullLabels[index];
                                 // Set category filter
@@ -955,7 +956,7 @@
             };
         }
 
-        // CHANGED: Get ALL categories sorted alphabetically
+        // Get ALL categories sorted alphabetically
         function getTopCategories(data) {
             const categoryCounts = {};
             data.forEach(item => {
@@ -974,7 +975,7 @@
             };
         }
 
-        // NEW FUNCTION: Fuzzy Search
+        // Fuzzy Search Function
         function fuzzySearch(item, searchTerm) {
             if (!searchTerm) return true;
             
@@ -1006,8 +1007,14 @@
         // Filtering System
         let filterTimeout;
         function initializeEventListeners() {
-            $('#searchInput').on('input', debounce(applyFilters, CONFIG.DEBOUNCE_DELAY));
-            $('#statusFilter').on('change', applyFilters);
+            $('#searchInput').on('input', function() {
+                AppState.hasUserInteracted = true;
+                debounce(applyFilters, CONFIG.DEBOUNCE_DELAY)();
+            });
+            $('#statusFilter').on('change', function() {
+                AppState.hasUserInteracted = true;
+                applyFilters();
+            });
         }
 
         function debounce(func, wait) {
@@ -1030,7 +1037,7 @@
             };
             
             AppState.filteredItems = AppState.inventory.filter(item => {
-                // CHANGED: Use fuzzy search instead of simple includes
+                // Use fuzzy search instead of simple includes
                 const matchesSearch = !AppState.activeFilters.search || 
                     fuzzySearch(item, AppState.activeFilters.search);
                 
@@ -1050,7 +1057,7 @@
             renderResults();
             updateSearchBadge();
             updateCounts();
-            updateEmptyState();
+            updateResultsVisibility();
         }
 
         function clearFilters() {
@@ -1060,6 +1067,8 @@
             $('#statusFilter').val('');
             updateVendorFilterByCategory('');
             updateCategoryFilterByVendor('');
+            // Reset interaction flag when clearing
+            AppState.hasUserInteracted = false;
             applyFilters();
             showToast('Filters cleared');
         }
@@ -1082,21 +1091,31 @@
             $('#visible-count').text(AppState.filteredItems.length.toLocaleString());
         }
 
-        // CHANGED: Show empty state only when there are no items at all
-        function updateEmptyState() {
+        // Show/hide results area based on user interaction and filters
+        function updateResultsVisibility() {
+            const resultsArea = $('#results-area');
             const emptyState = $('#empty-state');
             const resultsGrid = $('#results-grid');
             
-            if (AppState.filteredItems.length === 0) {
-                emptyState.removeClass('hidden');
-                resultsGrid.addClass('hidden');
+            // Check if user has interacted (searched or filtered)
+            if (AppState.hasUserInteracted) {
+                resultsArea.removeClass('hidden');
+                if (AppState.filteredItems.length === 0) {
+                    emptyState.removeClass('hidden');
+                    resultsGrid.addClass('hidden');
+                } else {
+                    emptyState.addClass('hidden');
+                    resultsGrid.removeClass('hidden');
+                }
             } else {
+                // No interaction yet, hide everything
+                resultsArea.addClass('hidden');
                 emptyState.addClass('hidden');
-                resultsGrid.removeClass('hidden');
+                resultsGrid.addClass('hidden');
             }
         }
 
-        // Results Rendering
+        // Results Rendering - REMOVED load more feature
         function renderResults() {
             const container = $('#results-grid');
             container.empty();
@@ -1105,24 +1124,11 @@
                 return;
             }
             
-            // Render limited items for performance
-            const itemsToRender = AppState.filteredItems.slice(0, CONFIG.ITEMS_PER_PAGE);
-            
-            itemsToRender.forEach(item => {
+            // Render all items
+            AppState.filteredItems.forEach(item => {
                 const card = createItemCard(item);
                 container.append(card);
             });
-            
-            // Show "load more" if there are more items
-            if (AppState.filteredItems.length > CONFIG.ITEMS_PER_PAGE) {
-                container.append(`
-                    <div class="col-span-full text-center py-8">
-                        <button onclick="loadMoreItems()" class="px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-50 hover:from-gray-200 hover:to-gray-100 border border-gray-200 text-gray-700 font-semibold rounded-lg transition-all duration-300">
-                            Load ${AppState.filteredItems.length - CONFIG.ITEMS_PER_PAGE} more items
-                        </button>
-                    </div>
-                `);
-            }
         }
 
         function createItemCard(item) {
@@ -1169,7 +1175,7 @@
             }
         }
 
-        // UPDATED: Better highlighting for multiple words
+        // Better highlighting for multiple words
         function highlightText(text, searchTerm) {
             if (!searchTerm || !text) return text;
             
@@ -1186,25 +1192,6 @@
             });
             
             return highlightedText;
-        }
-
-        function loadMoreItems() {
-            const container = $('#results-grid');
-            const currentCount = container.children().length - 1; // Subtract load more button
-            const nextItems = AppState.filteredItems.slice(currentCount, currentCount + CONFIG.ITEMS_PER_PAGE);
-            
-            nextItems.forEach(item => {
-                const card = createItemCard(item);
-                container.find('button').before(card);
-            });
-            
-            // Update load more button or remove it
-            const remaining = AppState.filteredItems.length - (currentCount + nextItems.length);
-            if (remaining > 0) {
-                container.find('button').text(`Load ${remaining} more items`);
-            } else {
-                container.find('button').remove();
-            }
         }
 
         // Modal Functions
