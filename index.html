@@ -436,6 +436,22 @@
         .bounce-bottom {
             animation: bounceBottom 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
+        /* Glowing search badge */
+#search-badge {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+    from {
+        box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+    }
+    to {
+        box-shadow: 0 4px 20px rgba(67, 97, 238, 0.5), 0 0 10px rgba(67, 97, 238, 0.2);
+    }
+}
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 bounce-scroll">
@@ -576,15 +592,15 @@
                 </h3>
                 
                 <!-- Search Bar -->
-                <div class="relative mb-6">
-                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <i class="fas fa-search text-gray-400"></i>
-                    </div>
-                    <input type="text" id="searchInput" class="modern-input w-full pl-12" placeholder="Search items, codes, descriptions, vendors...">
-                    <div id="search-badge" class="hidden absolute right-4 top-1/2 transform -translate-y-1/2 px-3 py-1.5 bg-gradient-to-r from-primary to-primary-light text-white rounded-lg text-xs font-bold whitespace-nowrap shadow-md">
-                        <span id="result-count">0</span> matches
-                    </div>
-                </div>
+<div class="relative mb-6">
+    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+        <i class="fas fa-search text-gray-400"></i>
+    </div>
+    <input type="text" id="searchInput" class="modern-input w-full pl-12" placeholder="Search items, codes, descriptions, vendors...">
+    <div id="search-badge" class="hidden absolute right-4 top-1/2 transform -translate-y-1/2 px-3 py-1.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg text-xs font-bold whitespace-nowrap shadow-lg shadow-primary/30">
+        <span id="result-count">0</span> matches
+    </div>
+</div>
 
                 <!-- Filter Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
