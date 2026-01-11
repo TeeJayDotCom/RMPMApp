@@ -39,8 +39,6 @@
 
         html {
             scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch; /* Add bounce for iOS */
-            overscroll-behavior-y: auto; /* Allow bounce */
         }
 
         body {
@@ -50,9 +48,6 @@
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            /* Enable bounce effect */
-            overflow-y: scroll;
-            min-height: 100vh;
         }
 
         /* Custom Scrollbar */
@@ -109,11 +104,6 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin: 2rem auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
 
         /* Glass Morphism */
@@ -287,7 +277,7 @@
             box-shadow: 0 10px 25px rgba(67, 97, 238, 0.3);
         }
 
-        /* FIXED: Floating Action Button - Arrow points up */
+        /* FIXED: Floating Action Button - Arrow points up correctly */
         .fab {
             position: fixed;
             bottom: 2rem;
@@ -307,8 +297,9 @@
             z-index: 100;
         }
 
+        /* REMOVED rotation to keep arrow pointing up */
         .fab:hover {
-            transform: scale(1.1); /* REMOVED rotation to keep arrow pointing up */
+            transform: scale(1.1);
             box-shadow: 0 12px 35px rgba(67, 97, 238, 0.5);
         }
 
@@ -422,27 +413,32 @@
             }
         }
 
-        /* ADDED: Bounce effect styles */
-        @keyframes bounceAtTop {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
+        /* Bounce effect for scroll */
+        .bounce-scroll {
+            overscroll-behavior: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
-        @keyframes bounceAtBottom {
+        @keyframes bounceTop {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(15px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes bounceBottom {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(20px); }
         }
 
         .bounce-top {
-            animation: bounceAtTop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            animation: bounceTop 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
 
         .bounce-bottom {
-            animation: bounceAtBottom 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            animation: bounceBottom 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
     </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+<body class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 bounce-scroll">
     
     <!-- Loading Screen -->
     <div id="loader" class="flex flex-col items-center justify-center">
@@ -626,8 +622,8 @@
             </div>
         </div>
 
-        <!-- Results Section - FIXED: Now always visible -->
-        <div id="results-section" class="animate-fade-in">
+        <!-- Results Section -->
+        <div id="results-section" class="hidden animate-fade-in">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <h2 class="text-xl font-bold text-gray-800">Inventory Items</h2>
                 <div class="flex items-center gap-4">
@@ -665,7 +661,95 @@
 
     <!-- Detail Modal -->
     <div id="detailModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
-        <!-- Modal content remains the same -->
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300" onclick="closeModal()"></div>
+        <div class="bg-white w-full max-w-6xl rounded-2xl shadow-2xl relative flex flex-col max-h-[90vh] animate-fade-in">
+            
+            <!-- Modal Header -->
+            <div class="p-8 border-b border-gray-100">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1 pr-8">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span id="mId" class="text-xs font-mono bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full">#ID</span>
+                            <span id="mStatus" class="status-badge"></span>
+                        </div>
+                        <h2 id="mTitle" class="text-2xl font-bold text-gray-800 leading-tight mb-3">Item Name</h2>
+                        <div class="flex items-center gap-4 text-sm">
+                            <span id="mVendor" class="font-semibold text-primary flex items-center gap-2">
+                                <i class="fas fa-building"></i>
+                                <span>Vendor</span>
+                            </span>
+                        </div>
+                    </div>
+                    <button onclick="closeModal()" class="w-12 h-12 rounded-full bg-gray-100 text-gray-400 hover:bg-red-50 hover:text-red-500 flex items-center justify-center transition-all duration-300">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="flex-grow overflow-y-auto p-8">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Left Column -->
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-5 rounded-xl border border-blue-200">
+                                <p class="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-2">Item Code</p>
+                                <p id="mCode" class="text-xl font-bold text-blue-900 font-mono">-</p>
+                            </div>
+                            <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-xl border border-gray-200">
+                                <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Category</p>
+                                <p id="mCategory" class="text-xl font-bold text-gray-800">-</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                <i class="fas fa-sticky-note"></i>
+                                <span>Remarks</span>
+                            </h4>
+                            <div class="bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 p-5 rounded-xl">
+                                <p id="mRemarks" class="text-sm text-gray-700 leading-relaxed">No remarks provided.</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                <i class="fas fa-info-circle"></i>
+                                <span>Key Details</span>
+                            </h4>
+                            <div class="grid grid-cols-2 gap-3" id="mQuickDetails"></div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <i class="fas fa-table"></i>
+                            <span>All Data Fields</span>
+                        </h4>
+                        <div class="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 max-h-[400px] overflow-y-auto">
+                            <table class="w-full text-sm">
+                                <tbody id="mRawTable" class="divide-y divide-gray-200"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-6 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl flex justify-between items-center">
+                <div class="text-sm text-gray-500" id="mTimestamp"></div>
+                <div class="flex gap-3">
+                    <button onclick="copyItemDetails()" class="modern-btn" style="background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);">
+                        <i class="fas fa-copy mr-2"></i>
+                        Copy Details
+                    </button>
+                    <button onclick="closeModal()" class="px-5 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold rounded-lg shadow-sm transition-all duration-300">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Toast Notification -->
@@ -696,8 +780,7 @@
             },
             charts: {},
             currentModalItem: null,
-            hasUserInteracted: false,
-            lastScrollTime: 0
+            hasUserInteracted: false
         };
 
         // Initialize App
@@ -708,46 +791,34 @@
             setupScrollBounce();
         });
 
-        // FIXED: Setup scroll bounce effect
+        // Setup scroll bounce effect
         function setupScrollBounce() {
-            let isScrolling;
+            let lastScrollTime = 0;
+            const bounceThreshold = 100; // ms
             
-            // Clear timeout function
-            function clearScrollTimeout() {
-                if (isScrolling) {
-                    clearTimeout(isScrolling);
-                }
-            }
-            
-            // Check scroll position and apply bounce
-            function checkScrollBounce() {
-                const scrollTop = $(window).scrollTop();
+            $(window).on('scroll', function() {
+                const scrollTop = $(this).scrollTop();
+                const now = Date.now();
                 const windowHeight = $(window).height();
                 const documentHeight = $(document).height();
                 
-                // If at top, bounce down
-                if (scrollTop <= 0) {
+                // Detect if we're at the top
+                if (scrollTop <= 10 && now - lastScrollTime > bounceThreshold) {
                     $('html').addClass('bounce-bottom');
                     setTimeout(() => {
                         $('html').removeClass('bounce-bottom');
-                    }, 600);
+                    }, 800);
+                    lastScrollTime = now;
                 }
                 
-                // If at bottom, bounce up
-                if (scrollTop + windowHeight >= documentHeight - 10) {
+                // Detect if we're at the bottom
+                if (scrollTop + windowHeight >= documentHeight - 10 && now - lastScrollTime > bounceThreshold) {
                     $('html').addClass('bounce-top');
                     setTimeout(() => {
                         $('html').removeClass('bounce-top');
-                    }, 600);
+                    }, 800);
+                    lastScrollTime = now;
                 }
-            }
-            
-            // Listen for scroll end
-            $(window).on('scroll', function() {
-                clearScrollTimeout();
-                isScrolling = setTimeout(function() {
-                    checkScrollBounce();
-                }, 150);
             });
         }
 
@@ -802,6 +873,7 @@
                         .join(' ')
                 };
                 
+                // Add all fields
                 Object.keys(row).forEach(key => {
                     if (!['ID', 'Status', 'Category', 'Item_Code', 'Item_Name', 'Vendor', 'Remarks'].includes(key)) {
                         item[key] = row[key];
@@ -818,25 +890,36 @@
         // Initialize Dashboard
         function initializeDashboard() {
             updateKPIs();
-            initializeFilters(); // FIXED: Initialize filters on load
+            initializeFilters();
             initializeCharts();
-            applyFilters(); // FIXED: Apply filters to show initial data
         }
 
-        // FIXED: Initialize filters properly
+        // FIXED: Initialize filters with all vendors and categories
         function initializeFilters() {
-            // Get unique vendors and categories
-            const vendors = [...new Set(AppState.inventory.map(item => item.vendor))].sort();
-            const categories = [...new Set(AppState.inventory.map(item => item.category))].sort();
+            // Get unique vendors
+            const vendors = [...new Set(AppState.inventory
+                .map(item => item.vendor)
+                .filter(vendor => vendor && vendor.trim() !== '')
+            )].sort();
+            
+            // Get unique categories
+            const categories = [...new Set(AppState.inventory
+                .map(item => item.category)
+                .filter(category => category && category.trim() !== '')
+            )].sort();
             
             // Populate vendor dropdown
             const vendorFilter = $('#vendorFilter');
+            vendorFilter.empty();
+            vendorFilter.append('<option value="">All Vendors</option>');
             vendors.forEach(vendor => {
                 vendorFilter.append(`<option value="${vendor}">${vendor}</option>`);
             });
             
             // Populate category dropdown
             const categoryFilter = $('#categoryFilter');
+            categoryFilter.empty();
+            categoryFilter.append('<option value="">All Categories</option>');
             categories.forEach(category => {
                 categoryFilter.append(`<option value="${category}">${category}</option>`);
             });
@@ -956,18 +1039,22 @@
         // Apply Filters
         function applyFilters() {
             AppState.filteredItems = AppState.inventory.filter(item => {
+                // Search filter
                 if (AppState.activeFilters.search && !fuzzySearch(item, AppState.activeFilters.search)) {
                     return false;
                 }
                 
+                // Vendor filter
                 if (AppState.activeFilters.vendor && item.vendor !== AppState.activeFilters.vendor) {
                     return false;
                 }
                 
+                // Category filter
                 if (AppState.activeFilters.category && item.category !== AppState.activeFilters.category) {
                     return false;
                 }
                 
+                // Status filter
                 if (AppState.activeFilters.status && item.status !== AppState.activeFilters.status) {
                     return false;
                 }
@@ -979,7 +1066,7 @@
             updateSearchBadge();
             updateCounts();
             updateCharts();
-            updateResultsVisibility(); // FIXED: Keep this but modified
+            updateResultsVisibility();
         }
 
         // Fuzzy Search
@@ -1006,6 +1093,7 @@
             AppState.activeFilters = { search: '', vendor: '', category: '', status: '' };
             AppState.hasUserInteracted = false;
             
+            // Reset both dropdowns to show all options
             updateVendorFilterByCategory('');
             updateCategoryFilterByVendor('');
             
@@ -1033,17 +1121,28 @@
             $('#visible-count').text(AppState.filteredItems.length.toLocaleString());
         }
 
-        // FIXED: Update Results Visibility - Only control empty state, not section visibility
+        // Update Results Visibility
         function updateResultsVisibility() {
+            const resultsSection = $('#results-section');
             const emptyState = $('#empty-state');
             const resultsGrid = $('#results-grid');
             
-            if (AppState.filteredItems.length === 0) {
-                emptyState.removeClass('hidden');
-                resultsGrid.addClass('hidden');
+            // Show results section only when user has interacted
+            if (AppState.hasUserInteracted) {
+                resultsSection.removeClass('hidden');
+                
+                if (AppState.filteredItems.length === 0) {
+                    emptyState.removeClass('hidden');
+                    resultsGrid.addClass('hidden');
+                } else {
+                    emptyState.addClass('hidden');
+                    resultsGrid.removeClass('hidden');
+                }
             } else {
+                // Hide everything when no interaction
+                resultsSection.addClass('hidden');
                 emptyState.addClass('hidden');
-                resultsGrid.removeClass('hidden');
+                resultsGrid.addClass('hidden');
             }
         }
 
@@ -1056,6 +1155,7 @@
                 return;
             }
             
+            // Limit display for performance
             const itemsToShow = AppState.filteredItems.slice(0, CONFIG.ITEMS_PER_PAGE);
             
             itemsToShow.forEach(item => {
@@ -1070,8 +1170,15 @@
             const searchTerm = AppState.activeFilters.search;
             const highlightedName = highlightText(item.name, searchTerm);
             
+            // FIXED: Ensure proper escaping for onclick handler
+            const itemId = String(item.id).replace(/'/g, "\\'");
+            const itemName = item.name.replace(/'/g, "\\'");
+            const itemCode = item.code.replace(/'/g, "\\'");
+            const itemCategory = item.category.replace(/'/g, "\\'");
+            const itemVendor = item.vendor.replace(/'/g, "\\'");
+            
             return `
-                <div class="item-card" onclick="openModal('${item.id}')">
+                <div class="item-card" onclick="openModal('${itemId}')">
                     <div class="flex justify-between items-start mb-4">
                         <span class="status-badge ${statusClass}">${item.status}</span>
                         <span class="text-xs font-mono font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full">${item.code}</span>
@@ -1120,12 +1227,14 @@
 
         // Initialize Charts
         function initializeCharts() {
+            // Destroy existing charts
             if (window.chartInstances) {
                 window.chartInstances.forEach(chart => chart.destroy());
             }
             
             window.chartInstances = [];
             
+            // Status Chart
             const statusCtx = document.getElementById('statusChart');
             if (statusCtx) {
                 const statusData = getStatusDistribution();
@@ -1165,6 +1274,7 @@
                 }));
             }
             
+            // Category Chart
             const categoryCtx = document.getElementById('categoryChart');
             if (categoryCtx) {
                 const categoryData = getTopCategories(8);
@@ -1270,13 +1380,17 @@
             };
         }
 
-        // Open Modal
+        // Open Modal - FIXED: This function was broken in previous version
         function openModal(itemId) {
             const item = AppState.inventory.find(i => String(i.id) === String(itemId));
-            if (!item) return;
+            if (!item) {
+                console.error('Item not found with ID:', itemId);
+                return;
+            }
             
             AppState.currentModalItem = item;
             
+            // Populate modal data
             $('#mTitle').text(item.name);
             $('#mVendor').html(`<i class="fas fa-building"></i> ${item.vendor}`);
             $('#mId').text(`#${item.id}`);
@@ -1285,16 +1399,21 @@
             $('#mRemarks').text(item.remarks || 'No remarks provided.');
             $('#mTimestamp').html(`<i class="far fa-clock"></i> ${item.timestamp}`);
             
+            // Update status badge
             const statusBadge = $('#mStatus');
             statusBadge.text(item.status);
             statusBadge.removeClass().addClass(`status-badge ${item.status === 'In Use' ? 'status-active' : 'status-discontinued'}`);
             
+            // Populate quick details
             populateQuickDetails(item);
             
+            // Populate raw data table
             populateRawDataTable(item);
             
+            // Show modal
             $('#detailModal').removeClass('hidden').addClass('flex');
             
+            // Add escape key listener
             $(document).on('keydown.modal', (e) => {
                 if (e.key === 'Escape') closeModal();
             });
@@ -1397,8 +1516,10 @@
                     break;
             }
             
+            // Show toast with animation
             toast.removeClass('hidden').addClass('toast-enter');
             
+            // Hide after 3 seconds
             setTimeout(() => {
                 toast.removeClass('toast-enter').addClass('toast-exit');
                 setTimeout(() => {
