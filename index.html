@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StockFlow | Inventory Dashboard</title>
     
-    <!-- Resources -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -277,7 +276,7 @@
             box-shadow: 0 10px 25px rgba(67, 97, 238, 0.3);
         }
 
-        /* FIXED: Floating Action Button - Arrow points up correctly */
+        /* Floating Action Button */
         .fab {
             position: fixed;
             bottom: 2rem;
@@ -297,7 +296,6 @@
             z-index: 100;
         }
 
-        /* REMOVED rotation to keep arrow pointing up */
         .fab:hover {
             transform: scale(1.1);
             box-shadow: 0 12px 35px rgba(67, 97, 238, 0.5);
@@ -413,50 +411,26 @@
             }
         }
 
-        /* Bounce effect for scroll */
-        .bounce-scroll {
-            overscroll-behavior: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        @keyframes bounceTop {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
-        }
-
-        @keyframes bounceBottom {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(20px); }
-        }
-
-        .bounce-top {
-            animation: bounceTop 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-
-        .bounce-bottom {
-            animation: bounceBottom 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
         /* Glowing search badge */
-#search-badge {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-    color: white;
-    box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
-    animation: glow 2s ease-in-out infinite alternate;
-}
+        #search-badge {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
 
-@keyframes glow {
-    from {
-        box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
-    }
-    to {
-        box-shadow: 0 4px 20px rgba(67, 97, 238, 0.5), 0 0 10px rgba(67, 97, 238, 0.2);
-    }
-}
+        @keyframes glow {
+            from {
+                box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+            }
+            to {
+                box-shadow: 0 4px 20px rgba(67, 97, 238, 0.5), 0 0 10px rgba(67, 97, 238, 0.2);
+            }
+        }
     </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 bounce-scroll">
+<body class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
     
-    <!-- Loading Screen -->
     <div id="loader" class="flex flex-col items-center justify-center">
         <div class="loader-content">
             <div class="loader-logo">
@@ -474,10 +448,8 @@
         </div>
     </div>
 
-    <!-- Main Container -->
     <div class="container mx-auto px-4 py-8 max-w-7xl">
         
-        <!-- Header -->
         <header class="mb-10 animate-slide-in">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
@@ -493,7 +465,6 @@
             </div>
         </header>
 
-        <!-- Stats Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10 animate-fade-in">
             <div class="glass-panel p-6">
                 <div class="flex items-center justify-between mb-4">
@@ -548,9 +519,7 @@
             </div>
         </div>
 
-        <!-- Charts Section -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10 animate-fade-in">
-            <!-- Status Chart -->
             <div class="chart-container">
                 <div class="flex items-center justify-between mb-6">
                     <div>
@@ -566,7 +535,6 @@
                 </div>
             </div>
 
-            <!-- Category Chart -->
             <div class="chart-container">
                 <div class="flex items-center justify-between mb-6">
                     <div>
@@ -583,7 +551,6 @@
             </div>
         </div>
 
-        <!-- Search & Filters Section -->
         <div class="mb-10 animate-slide-in">
             <div class="glass-panel p-6">
                 <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
@@ -591,18 +558,16 @@
                     Search & Filter Inventory
                 </h3>
                 
-                <!-- Search Bar -->
-<div class="relative mb-6">
-    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-        <i class="fas fa-search text-gray-400"></i>
-    </div>
-    <input type="text" id="searchInput" class="modern-input w-full pl-12" placeholder="Search items, codes, descriptions, vendors...">
-    <div id="search-badge" class="hidden absolute right-4 top-1/2 transform -translate-y-1/2 px-3 py-1.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg text-xs font-bold whitespace-nowrap shadow-lg shadow-primary/30">
-        <span id="result-count">0</span> matches
-    </div>
-</div>
+                <div class="relative mb-6">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    <input type="text" id="searchInput" class="modern-input w-full pl-12" placeholder="Search items, codes, descriptions, vendors...">
+                    <div id="search-badge" class="hidden absolute right-4 top-1/2 transform -translate-y-1/2 px-3 py-1.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg text-xs font-bold whitespace-nowrap shadow-lg shadow-primary/30">
+                        <span id="result-count">0</span> matches
+                    </div>
+                </div>
 
-                <!-- Filter Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Vendor</label>
@@ -628,7 +593,6 @@
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
                 <div class="flex justify-end gap-4 mt-6 pt-6 border-t border-gray-100">
                     <button onclick="clearFilters()" class="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors">
                         <i class="fas fa-filter-circle-xmark mr-2"></i>
@@ -638,7 +602,6 @@
             </div>
         </div>
 
-        <!-- Results Section -->
         <div id="results-section" class="hidden animate-fade-in">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <h2 class="text-xl font-bold text-gray-800">Inventory Items</h2>
@@ -650,12 +613,9 @@
                 </div>
             </div>
 
-            <!-- Results Grid -->
             <div id="results-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Items will be inserted here -->
-            </div>
+                </div>
 
-            <!-- Empty State -->
             <div id="empty-state" class="hidden flex flex-col items-center justify-center py-16 text-gray-400">
                 <div class="w-32 h-32 bg-gradient-to-br from-gray-100 to-gray-50 rounded-full flex items-center justify-center mb-6">
                     <i class="fas fa-search text-5xl opacity-30"></i>
@@ -669,18 +629,15 @@
             </div>
         </div>
 
-        <!-- FIXED: Floating Action Button with upward arrow -->
         <div class="fab" onclick="scrollToTop()" title="Scroll to top">
             <i class="fas fa-chevron-up"></i>
         </div>
     </div>
 
-    <!-- Detail Modal -->
     <div id="detailModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300" onclick="closeModal()"></div>
         <div class="bg-white w-full max-w-6xl rounded-2xl shadow-2xl relative flex flex-col max-h-[90vh] animate-fade-in">
             
-            <!-- Modal Header -->
             <div class="p-8 border-b border-gray-100">
                 <div class="flex justify-between items-start">
                     <div class="flex-1 pr-8">
@@ -702,10 +659,8 @@
                 </div>
             </div>
 
-            <!-- Modal Content -->
             <div class="flex-grow overflow-y-auto p-8">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <!-- Left Column -->
                     <div class="space-y-6">
                         <div class="grid grid-cols-2 gap-4">
                             <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-5 rounded-xl border border-blue-200">
@@ -737,7 +692,6 @@
                         </div>
                     </div>
 
-                    <!-- Right Column -->
                     <div>
                         <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                             <i class="fas fa-table"></i>
@@ -752,22 +706,21 @@
                 </div>
             </div>
 
-            <!-- Modal Footer -->
-<div class="p-6 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl flex justify-between items-center">
-    <div class="text-sm text-gray-500" id="mTimestamp"></div>
-    <div class="flex gap-3">
-        <!-- Updated WhatsApp-style copy button -->
-        <button onclick="copyItemDetails()" class="px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold rounded-lg shadow-sm transition-all duration-300 flex items-center gap-2">
-            <i class="fab fa-whatsapp text-lg"></i>
-            <span>Copy for WhatsApp</span>
-        </button>
-        <button onclick="closeModal()" class="px-5 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold rounded-lg shadow-sm transition-all duration-300">
-            Close
-        </button>
+            <div class="p-6 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl flex justify-between items-center">
+                <div class="text-sm text-gray-500" id="mTimestamp"></div>
+                <div class="flex gap-3">
+                    <button onclick="copyItemDetails()" class="px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold rounded-lg shadow-sm transition-all duration-300 flex items-center gap-2">
+                        <i class="fab fa-whatsapp text-lg"></i>
+                        <span>Copy for WhatsApp</span>
+                    </button>
+                    <button onclick="closeModal()" class="px-5 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold rounded-lg shadow-sm transition-all duration-300">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
 
-    <!-- Toast Notification -->
     <div id="toast" class="fixed top-8 right-8 z-50 px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl shadow-xl hidden">
         <div class="flex items-center gap-3">
             <i class="fas fa-check-circle text-lg"></i>
@@ -803,39 +756,7 @@
             simulateLoading();
             loadData(CONFIG.FILENAME);
             setupEventListeners();
-            setupScrollBounce();
         });
-
-        // Setup scroll bounce effect
-        function setupScrollBounce() {
-            let lastScrollTime = 0;
-            const bounceThreshold = 100; // ms
-            
-            $(window).on('scroll', function() {
-                const scrollTop = $(this).scrollTop();
-                const now = Date.now();
-                const windowHeight = $(window).height();
-                const documentHeight = $(document).height();
-                
-                // Detect if we're at the top
-                if (scrollTop <= 10 && now - lastScrollTime > bounceThreshold) {
-                    $('html').addClass('bounce-bottom');
-                    setTimeout(() => {
-                        $('html').removeClass('bounce-bottom');
-                    }, 800);
-                    lastScrollTime = now;
-                }
-                
-                // Detect if we're at the bottom
-                if (scrollTop + windowHeight >= documentHeight - 10 && now - lastScrollTime > bounceThreshold) {
-                    $('html').addClass('bounce-top');
-                    setTimeout(() => {
-                        $('html').removeClass('bounce-top');
-                    }, 800);
-                    lastScrollTime = now;
-                }
-            });
-        }
 
         // Loading Animation
         function simulateLoading() {
@@ -909,7 +830,6 @@
             initializeCharts();
         }
 
-        // FIXED: Initialize filters with all vendors and categories
         function initializeFilters() {
             // Get unique vendors
             const vendors = [...new Set(AppState.inventory
@@ -1185,12 +1105,8 @@
             const searchTerm = AppState.activeFilters.search;
             const highlightedName = highlightText(item.name, searchTerm);
             
-            // FIXED: Ensure proper escaping for onclick handler
+            // Ensure proper escaping for onclick handler
             const itemId = String(item.id).replace(/'/g, "\\'");
-            const itemName = item.name.replace(/'/g, "\\'");
-            const itemCode = item.code.replace(/'/g, "\\'");
-            const itemCategory = item.category.replace(/'/g, "\\'");
-            const itemVendor = item.vendor.replace(/'/g, "\\'");
             
             return `
                 <div class="item-card" onclick="openModal('${itemId}')">
@@ -1395,7 +1311,7 @@
             };
         }
 
-        // Open Modal - FIXED: This function was broken in previous version
+        // Open Modal
         function openModal(itemId) {
             const item = AppState.inventory.find(i => String(i.id) === String(itemId));
             if (!item) {
@@ -1481,76 +1397,52 @@
             });
         }
 
-        // Replace the existing copyItemDetails() function with this:
-
-// Copy Item Details with WhatsApp-style formatting
-function copyItemDetails() {
-    if (!AppState.currentModalItem) return;
-    
-    const item = AppState.currentModalItem;
-    
-    // Create a fancy formatted message with icons for WhatsApp
-    let whatsappMessage = `📦 *INVENTORY ITEM DETAILS*\n`;
-    whatsappMessage += `━━━━━━━━━━━━━━━━━━━━\n\n`;
-    
-    // Basic Information with icons
-    whatsappMessage += `🔹 *Item ID:* ${item.id}\n`;
-    whatsappMessage += `🔹 *Status:* ${item.status}\n`;
-    whatsappMessage += `🔹 *Category:* ${item.category}\n`;
-    whatsappMessage += `🔹 *Item Code:* ${item.code}\n`;
-    whatsappMessage += `🔹 *Item Name:* ${item.name}\n`;
-    whatsappMessage += `🔹 *Vendor:* ${item.vendor}\n\n`;
-    
-    // Additional Details with conditional checks
-    if (item.rawData['Old_Item_Code']) {
-        whatsappMessage += `📋 *Previous Code:* ${item.rawData['Old_Item_Code']}\n`;
-    }
-    
-    if (item.rawData['Product_Code']) {
-        whatsappMessage += `📋 *Product Code:* ${item.rawData['Product_Code']}\n`;
-    }
-    
-    if (item.rawData['RM PM Product List 2::Product_Detail']) {
-        whatsappMessage += `📋 *Product Detail:* ${item.rawData['RM PM Product List 2::Product_Detail']}\n`;
-    }
-    
-    if (item.rawData['Item_Detail_by_Vendor']) {
-        whatsappMessage += `📋 *Vendor Detail:* ${item.rawData['Item_Detail_by_Vendor']}\n`;
-    }
-    
-    // Remarks with icon
-    if (item.remarks && item.remarks.trim() !== '') {
-        whatsappMessage += `\n📝 *Remarks:*\n${item.remarks}\n`;
-    }
-    
-    whatsappMessage += `\n━━━━━━━━━━━━━━━━━━━━\n`;
-    whatsappMessage += `🔗 _Shared via StockFlow Dashboard_`;
-    
-    // Copy to clipboard
-    navigator.clipboard.writeText(whatsappMessage).then(() => {
-        showToast('Details copied for WhatsApp!', 'success');
-    }).catch(err => {
-        console.error('Failed to copy: ', err);
-        showToast('Failed to copy details', 'error');
-    });
-}
-
-// Also update the button in your modal to match the WhatsApp style:
-// Replace this button in your modal footer:
-/*
-<button onclick="copyItemDetails()" class="modern-btn" style="background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);">
-    <i class="fas fa-copy mr-2"></i>
-    Copy Details
-</button>
-*/
-
-// With this WhatsApp-style button:
-/*
-<button onclick="copyItemDetails()" class="px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold rounded-lg shadow-sm transition-all duration-300 flex items-center gap-2">
-    <i class="fab fa-whatsapp text-lg"></i>
-    <span>Copy for WhatsApp</span>
-</button>
-*/
+        // Copy Item Details with WhatsApp-style formatting
+        function copyItemDetails() {
+            if (!AppState.currentModalItem) return;
+            
+            const item = AppState.currentModalItem;
+            
+            let whatsappMessage = `📦 *INVENTORY ITEM DETAILS*\n`;
+            whatsappMessage += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+            
+            whatsappMessage += `🔹 *Item ID:* ${item.id}\n`;
+            whatsappMessage += `🔹 *Status:* ${item.status}\n`;
+            whatsappMessage += `🔹 *Category:* ${item.category}\n`;
+            whatsappMessage += `🔹 *Item Code:* ${item.code}\n`;
+            whatsappMessage += `🔹 *Item Name:* ${item.name}\n`;
+            whatsappMessage += `🔹 *Vendor:* ${item.vendor}\n\n`;
+            
+            if (item.rawData['Old_Item_Code']) {
+                whatsappMessage += `📋 *Previous Code:* ${item.rawData['Old_Item_Code']}\n`;
+            }
+            
+            if (item.rawData['Product_Code']) {
+                whatsappMessage += `📋 *Product Code:* ${item.rawData['Product_Code']}\n`;
+            }
+            
+            if (item.rawData['RM PM Product List 2::Product_Detail']) {
+                whatsappMessage += `📋 *Product Detail:* ${item.rawData['RM PM Product List 2::Product_Detail']}\n`;
+            }
+            
+            if (item.rawData['Item_Detail_by_Vendor']) {
+                whatsappMessage += `📋 *Vendor Detail:* ${item.rawData['Item_Detail_by_Vendor']}\n`;
+            }
+            
+            if (item.remarks && item.remarks.trim() !== '') {
+                whatsappMessage += `\n📝 *Remarks:*\n${item.remarks}\n`;
+            }
+            
+            whatsappMessage += `\n━━━━━━━━━━━━━━━━━━━━\n`;
+            whatsappMessage += `🔗 _Shared via StockFlow Dashboard_`;
+            
+            navigator.clipboard.writeText(whatsappMessage).then(() => {
+                showToast('Details copied for WhatsApp!', 'success');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                showToast('Failed to copy details', 'error');
+            });
+        }
 
         // Refresh Data
         function refreshData() {
@@ -1582,10 +1474,8 @@ function copyItemDetails() {
                     break;
             }
             
-            // Show toast with animation
             toast.removeClass('hidden').addClass('toast-enter');
             
-            // Hide after 3 seconds
             setTimeout(() => {
                 toast.removeClass('toast-enter').addClass('toast-exit');
                 setTimeout(() => {
